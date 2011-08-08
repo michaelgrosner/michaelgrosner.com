@@ -1,0 +1,57 @@
+html {
+	background-color: #ffffff;
+}
+body {
+	width: 800px;
+	margin: 0px auto;
+	font: 1.25em "minion-pro-1", "minion-pro-2", Palatino, Georgia, "Times New Roman", serif;
+	line-height: 130%;
+}
+figcaption {
+	display: none;
+}
+h1 {
+	color: #0f4fa8;
+	font-size: 1.5em;
+}
+pre {
+	font-size: .8em;
+	font-family: 'Inconsolata', monospace;
+	overflow-x: auto;
+	overflow-y: hidden;
+	line-height: 100%;
+}
+#header {
+	border-bottom: 5px solid #ff8940;
+	height: 40px;
+}
+a {
+	color: #FF6200;
+	text-decoration: none;
+}
+a.mgdotcom {
+	font-size: 1.3em;
+	float: left;
+	top: 13px;
+	position: relative;
+	color: #0f4fab;
+}
+#menu {
+	float: right;
+	top: 14px;
+	position: relative;
+	font-size: 1em;
+}
+a#menu {
+	padding-left: 10px;
+}
+.listing {
+}
+.listing .item {
+	border: 1px solid;
+	width: 358px;
+	margin: 10px;
+	float: left;
+	padding: 10px;
+	min-height: 300px;
+}

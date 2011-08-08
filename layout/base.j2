@@ -1,0 +1,36 @@
+
+<!doctype html>
+<head>
+	
+	<meta charset="{{ resource.meta.charset }}">
+	<meta http-equiv="X-UA-Compatible" content="{{ resource.meta.compatibility }}">
+
+	<title>{% block title %}{{ resource.meta.title }}{% endblock title %}</title>
+
+	<meta name="description" content="{{ resource.meta.description }}">
+	<meta name="author" content="{{ resource.meta.author }}">
+	<meta name="viewport" content="{{ resource.meta.viewport }}">
+
+	<link href='http://fonts.googleapis.com/css?family=Inconsolata' rel='stylesheet' type='text/css'>
+
+	<link rel="stylesheet" href="{{ media_url('css/site.css') }}">
+	<link rel="stylesheet" href="{{ media_url('css/pygments.css') }}">
+	
+</head>
+<body>
+<div id="header">
+	<a href="/" class="mgdotcom">michaelgrosner.com</a>
+	<div id="menu">
+	{% for menu_item in menu %}
+		<a href="{{ menu_item.url }}">{{ menu_item.title }}</a>
+	{% endfor %}
+	</div>
+</div>
+<div id="content">
+	{% block content %}
+	{% endblock content %}
+</div>
+	<script src="//ajax.googleapis.com/ajax/libs/jquery/1.5.1/jquery.js"></script>
+	<!-- Include google analytics here -->
+</body>
+</html>

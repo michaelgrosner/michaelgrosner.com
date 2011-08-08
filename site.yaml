@@ -1,0 +1,54 @@
+mode: development
+media_root: /media
+media_url: /media # will use relative path, prepend "/" for absolute path
+base_url: http://localhost:8080/
+plugins:
+    - hyde.ext.plugins.meta.MetaPlugin
+    - hyde.ext.plugins.auto_extend.AutoExtendPlugin
+    - hyde.ext.plugins.syntext.SyntextPlugin
+    - hyde.ext.plugins.sorter.SorterPlugin
+    - hyde.ext.plugins.tagger.TaggerPlugin
+    - hyde.ext.plugins.textlinks.TextlinksPlugin
+context:
+    data:
+        author:
+            name: Michael Grosner
+            url: "http://michaelgrosner.com"
+        layout:
+            name: Programming Blog
+            url: "https://github.com/merlinrebrovic/hyde-starter-kit"
+        project:
+            name: Hyde
+            url: "http://hyde.github.com"
+            install: "http://hyde.github.com/install.html"
+        menu:
+            - title: Blog
+              url: "/blog"
+              type: node
+            - title: About
+              type: page
+              url: "/about.html"
+              type: page
+            - title: Github
+              type: page
+              url: "https://github.com/michaelgrosner"
+meta:
+    nodemeta: meta.yaml
+    created: !!timestamp 2010-01-01 00:00:00
+    author: Michael Grosner
+sorter:
+    time:
+        attr:
+            - meta.created
+        reverse: true
+        filters:
+            source.kind: html
+            meta.listable: true
+tagger:
+    sorter: time
+    archives:
+        blog:
+            source: blog
+            target: blog/tags
+            template: tagged_posts.j2
+            archive_extension: html

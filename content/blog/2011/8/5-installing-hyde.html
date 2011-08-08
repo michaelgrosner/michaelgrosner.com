@@ -1,0 +1,143 @@
+---
+title: Setting up a static site using Hyde
+description: Hyde, a static website generator using Python and Jinja2 templating engine has some great ideas underneath, but the lack of documentation on the package left me digging around for hours.
+created: !!timestamp 2011-08-05 14:13:00
+extends: blog.j2
+default_block: post
+listable: true
+---
+
+### Installing packages
+I set up a virtualenv with pip then downloaded Hyde `pip install hyde`. In addition, I set up fabric as Steve Losh documented in his post [Moving from Django to Hyde](http://stevelosh.com/blog/2010/01/moving-from-django-to-hyde/).
+
+### First steps
+The [github](https://github.com/lakshmivyas/hyde/) documentation on Hyde is so broken, even the steps to initialize a project and generate content are out dated. Assuming you're in your virtualenv, running `hyde create` will create the static application, which includes folders `content`, `layout`, and the file `site.yaml`.
+
+A better idea would be to follow Steve Losh's fabfile in the section above. As with the github documentation, his fabfile's command-line arguments are off. Use the updated commands below:
+
+{% syntax bash %}
+hyde create  # Create a project in the current directory
+hyde gen     # Generate content and layouts for the current project
+hyde serve   # Serve the generated content
+{% endsyntax %}
+
+### An overview of the static site
+At first, I was confused about which parts go where, Hyde is not like Django which enforces a strict, clear line between logic in `views.py`, data in `models.py`, and templates for the visual stuff.
+
+The folder `layout` contains the Jinja2 templates used in rendering the site. First, you will want to create a `base.j2` template to serve as your site-wide, base template. I provided a sample `base.j2` to illustrate a few points.
+
+### A base template
+
+{% syntax jinja %}{% raw %}
+<!doctype html>
+<head>
+    
+    <title>{% block title %}{{ resource.meta.title }}{% endblock title %}</title>
+
+    <meta name="description" content="{{ resource.meta.description }}">
+    <meta name="author" content="{{ resource.meta.author }}">
+
+    <link rel="stylesheet" href="{{ media_url('css/site.css') }}">
+    <link rel="stylesheet" href="{{ media_url('css/pygments.css') }}">
+
+</head>
+<body>
+<a href="{{ meta.base_url }}" class="mgdotcom">michaelgrosner.com</a><br>
+<hr>
+{% block content %}
+{% endblock content %}
+
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.5.1/jquery.js"></script>
+
+</body>
+</html>
+{% endraw %}{% endsyntax %}
+
+First question is: What is `resource` and `meta` for? Well, if you look in `site.yaml` created when you ran `hyde create`, you would notice fields such as `author`, which get placed into the `meta` variable. I'm still unclear about the workings of the `resource` variable, since `resource.meta.description` takes in a per-page description blurb (which will be demonstrated later)
+
+From the `base.j2` layout, subclassing of templates can continue on like as in Django by defining `block` tags and by using the `extends`. If you don't know about this, consider [Django's excellent documentation](https://docs.djangoproject.com/en/1.3/ref/templates/builtins/)
+
+Also notice the `media_url` function, which can be changed in `site.yaml`. Hyde comes with pygments support if you have it installed, thus the inclusion of `pygments.css` and can produce nice CSS for use by running the shell command
+
+{% syntax bash %}
+pygmentize -f html -S xxxxxx -a .highlight > content/media/css/pygments.css
+{% endsyntax %}
+
+Where `xxxxxx` is one of the [color schemes](http://pygments.org/docs/styles/) supported by pygments.
+
+I chose to use Markdown in this blog as the formatter for my content files. I set up a `blog.j2` template to extend `base.j2` which is, briefly:
+
+{% syntax jinja %}{% raw %}
+
+{% block content %}
+
+{% filter markdown|typogrify -%}
+{% mark post -%}
+    {% block post -%}{%- endblock %}
+{%- endmark %}
+{%- endfilter %}
+
+{% endblock content %}
+
+{% endraw %}{% endsyntax %}
+
+
+Now everything which inherits `blog.j2` and has `default_block` set to `post` (again, more on that later) will be assumed to be in Markdown.
+
+### Including content
+
+My content folder contains an `index.html`, and folders for the `blog` and `media`. 
+
+Lets make a sample blog post as follows:
+{% syntax yaml %}{% raw %}
+---
+title: Setting up a static site using Hyde
+description: Hyde, a static website generator using Python and Jinja2 
+templating engine has some great ideas underneath, but the lack of 
+documentation on the package left me digging around for hours.
+created: !!timestamp 2011-08-05 14:13:00
+extends: blog.j2
+default_block: post
+listable: true
+---
+
+<b>Hello world!</b>
+{% syntax python %}
+def foo(bar):
+    print "Hello world!"
+{% endsyntax %}
+
+{% endraw %}{% endsyntax %}
+
+First, notice the yaml-style variables `title`, `description`, etc. These variables get imported into your layout files so, as in the sample `base.j2` provided above, one can simply use `{{ resource.meta.title }}` as a variable 
+which will reference the yaml in the content file.
+
+Next, notice the `extends` and `default_block` parameters. Assuming you're extending a template (you should), these values are crucial to making sure the content knows where to render.
+
+Lastly, I'm not sure if it's standard Hyde to include a `listable` variable (I believe it's included in the sample site code), but it's useful later in the `walk` function which can denote pages of interest, such as blog posts, for instance, or hide .swp files if you're using vim.
+
+Like in the layout files, Jinja tags and HTML are available for use by a content file. For some reason, this really tripped me up when learning Hyde.
+
+### Walking and Linking
+
+One of the template tags broken seemingly dozens of times thoroughout the documentation is getting a list of content files.
+
+Consider the Jinja code in a layout `listing.j2`:
+{% syntax jinja %}{% raw %}
+<ul>
+{% for res in resource.node.walk_resources() %}
+    {% if res.meta.listable %}
+        <a href="{{ res.full_url }}">{{ res.meta.title }}</a> {{ res.meta.created }}<br>
+    {% endif %}
+{% else %}
+    No other pages<br>
+{% endfor %}
+</ul>
+{% endraw %}{% endsyntax %}
+
+
+Each resource has a `full_url` parameter, which also references `site.yaml` to produce absolute URLs, and has access to the `meta` variables discussed previously.
+
+### Conclusion
+
+I really like Hyde so far, I love the ability to create a decent static site using the Django/Jinja templating engine. What I can't take is the lack of decent documentation.

@@ -1,0 +1,58 @@
+
+<!doctype html>
+<head>
+	
+	<meta charset="">
+	<meta http-equiv="X-UA-Compatible" content="">
+
+	<title>Django and Numpy</title>
+
+	<meta name="description" content="I attempt to outline a method in which Django and Numpy can coexist peacefully.">
+	<meta name="author" content="Michael Grosner">
+	<meta name="viewport" content="">
+
+	<link href='http://fonts.googleapis.com/css?family=Inconsolata' rel='stylesheet' type='text/css'>
+
+	<link rel="stylesheet" href="/media/css/site.css">
+	<link rel="stylesheet" href="/media/css/pygments.css">
+	
+</head>
+<body>
+<div id="header">
+	<a href="/" class="mgdotcom">michaelgrosner.com</a>
+	<div id="menu">
+			<a href="/blog">Blog</a>
+			<a href="/about.html">About</a>
+			<a href="https://github.com/michaelgrosner">Github</a>
+		</div>
+</div>
+<div id="content">
+	<h2>Django and Numpy</h2>
+<time datetime="2011-08-09">
+    Posted: Tue, 09 Aug 2011
+</time>
+
+
+<p>One of the many joys of working in any sort of field which touches Biology and Computing is the ever abundance of file parsing. Every graduate student has an arsenal of Python or Perl scripts ready to tackle any one-off file&nbsp;formatting.</p>
+<p>I recently had to parse a series of 4x4 matrices comprising of a position vector and a translation matrix, save it to a database, and compute some statistics. There will be thousands of these matricies, plus millions of the constituent atoms making up the <span class="caps">DNA</span> base&nbsp;pairs.</p>
+<p>I&#8217;m good at Python, used Django in the past, and I love Numpy. So why not try to combine&nbsp;them?</p>
+<p>My super hack-ish way originated from <a href="http://stackoverflow.com/questions/6485790/numpy-array-to-base64-and-back-to-numpy-array-python">this stackoverflow&nbsp;post</a></p>
+<div class="codebox"><figure class="code"><div class="highlight"><pre><span class="kn">from</span>   <span class="nn">django.db</span> <span class="kn">import</span> <span class="n">models</span><br /><span class="kn">from</span>   <span class="nn">numpy</span>     <span class="kn">import</span> <span class="o">*</span><br /><span class="kn">import</span> <span class="nn">base64</span><br />&nbsp;<br /><span class="k">class</span> <span class="nc">Array</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span><br />&nbsp;<br />    <span class="n">data</span>  <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">10000</span><span class="p">)</span><br />    <br />    <span class="n">x_dim</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">IntegerField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><br />    <span class="n">y_dim</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">IntegerField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span><br />&nbsp;<br />    <span class="k">def</span> <span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span><br />        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">float64</span><span class="p">)</span><br />        <span class="c"># Vector case</span><br />        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span><br />            <span class="bp">self</span><span class="o">.</span><span class="n">x_dim</span> <span class="o">=</span> <span class="n">size</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span><br />        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span><br />            <span class="bp">self</span><span class="o">.</span><span class="n">x_dim</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">y_dim</span> <span class="o">=</span> <span class="n">shape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span><br />        <span class="k">else</span><span class="p">:</span><br />            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;Only 1 or 2D Arrays are supported&quot;</span><span class="p">)</span><br />        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">base64</span><span class="o">.</span><span class="n">b64encode</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span><br />        <span class="nb">super</span><span class="p">(</span><span class="n">Array</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span><br />&nbsp;<br />    <span class="n">load</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">_load</span><span class="p">)</span><br />&nbsp;<br />    <span class="k">def</span> <span class="nf">_load</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span><br />        <span class="n">t</span> <span class="o">=</span> <span class="n">base64</span><span class="o">.</span><span class="n">decodestring</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span><br />        <span class="n">a</span> <span class="o">=</span> <span class="n">frombuffer</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">float64</span><span class="p">)</span><br />        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">y_dim</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span><br />            <span class="k">return</span> <span class="n">a</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">x_dim</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">y_dim</span><span class="p">))</span><br />        <span class="k">else</span><span class="p">:</span><br />            <span class="k">return</span> <span class="n">a</span><br /></pre></div><br /><figcaption>Python</figcaption></figure></div>
+
+<h3>Issues with this&nbsp;method</h3>
+<ul>
+<li>Since <span class="caps">SQL</span> doesn&#8217;t support an array class, there would be no way to make a QuerySet looking for <code>array[2,3]</code>, for instance. You would have to load the every, entire array then make some&nbsp;calculations.</li>
+<li>Arbitrary dimensional arrays won&#8217;t&nbsp;work.</li>
+<li><code>get_or_create</code> won&#8217;t work since the logical value of an array in numpy can be evaulated using <code>any()</code> or <code>all()</code></li>
+<li>It&#8217;s ugly&#8230; but it&#8217;s&nbsp;working.</li>
+</ul>
+<h3>Future&nbsp;work?</h3>
+<p>As I was typing up this post, I was imagining sparse array model based on this sort of&nbsp;psuedocode</p>
+<div class="codebox"><figure class="code"><div class="highlight"><pre><span class="k">class</span> <span class="nc">Element</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span><br />    <span class="n">array</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s">&#39;SparseArray&#39;</span><span class="p">)</span><br />    <span class="n">value</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">FloatField</span><span class="p">()</span><br />    <span class="n">x_ind</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">IntegerField</span><span class="p">()</span><br />    <span class="n">y_ind</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">IntegerField</span><span class="p">()</span><br />&nbsp;<br /><span class="k">class</span> <span class="nc">SparseArray</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span><br />    <span class="c"># Fields for x_dim, y_dim, etc. along </span><br />    <span class="c"># with a method to access elements</span><br /></pre></div><br /><figcaption>Python</figcaption></figure></div>
+
+<p>This would be valuable if I desperately needed to access individual variables, but the extra cost of inserting all the extra Elements into the database would probably be too&nbsp;high.</p>
+</div>
+	<script src="//ajax.googleapis.com/ajax/libs/jquery/1.5.1/jquery.js"></script>
+	<!-- Include google analytics here -->
+</body>
+</html>

@@ -1,0 +1,16 @@
+{% extends "base.j2" %}
+
+{% block content %}
+<h2>{{ resource.meta.title }}</h2>
+<time datetime="{{ resource.meta.created.strftime('%Y-%m-%d') }}">
+    Posted: {{ resource.meta.created.strftime('%a, %d %b %Y') }}
+</time>
+
+
+{% filter markdown|typogrify -%}
+{% mark post -%}
+	{% block post -%}{%- endblock %}
+{%- endmark %}
+{%- endfilter %}
+
+{% endblock content %}

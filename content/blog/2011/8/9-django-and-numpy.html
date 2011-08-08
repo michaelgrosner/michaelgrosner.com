@@ -1,0 +1,81 @@
+---
+title: Django and Numpy
+description: I attempt to outline a method in which Django and Numpy can coexist peacefully.
+created: !!timestamp 2011-08-09 12:58:12
+tags:
+    - Django
+    - Numpy
+    - SQL
+    - Hacking
+extends: blog.j2
+default_block: post
+listable: true
+---
+
+One of the many joys of working in any sort of field which touches Biology and Computing is the ever abundance of file parsing. Every graduate student has an arsenal of Python or Perl scripts ready to tackle any one-off file formatting.
+
+I recently had to parse a series of 4x4 matrices comprising of a position vector and a translation matrix, save it to a database, and compute some statistics. There will be thousands of these matricies, plus millions of the constituent atoms making up the DNA base pairs.
+
+I'm good at Python, used Django in the past, and I love Numpy. So why not try to combine them?
+
+My super hack-ish way originated from [this stackoverflow post](http://stackoverflow.com/questions/6485790/numpy-array-to-base64-and-back-to-numpy-array-python)
+
+{% syntax python %}
+from   django.db import models
+from   numpy     import *
+import base64
+
+class Array(models.Model):
+
+    data  = models.CharField(max_length=10000)
+    
+    x_dim = models.IntegerField(default=0)
+    y_dim = models.IntegerField(default=0, blank=True, null=True)
+
+    def save(self, *args, **kwargs):
+        self.data = self.data.astype(float64)
+        # Vector case
+        if self.data.ndim == 1:
+            self.x_dim = size(self.data)
+        elif self.data.ndim == 2:
+            self.x_dim, self.y_dim = shape(self.data)
+        else:
+            raise Exception("Only 1 or 2D Arrays are supported")
+        self.data = base64.b64encode(self.data)
+        super(Array, self).save(*args, **kwargs)
+
+    load = property(_load)
+
+    def _load(self):
+        t = base64.decodestring(self.data)
+        a = frombuffer(t, dtype=float64)
+        if self.y_dim > 0:
+            return a.reshape((self.x_dim, self.y_dim))
+        else:
+            return a
+{% endsyntax %}
+
+### Issues with this method
+
+* Since SQL doesn't support an array class, there would be no way to make a QuerySet looking for `array[2,3]`, for instance. You would have to load the every, entire array then make some calculations.
+* Arbitrary dimensional arrays won't work.
+* `get_or_create` won't work since the logical value of an array in numpy can be evaulated using `any()` or `all()`
+* It's ugly... but it's working.
+
+### Future work?
+
+As I was typing up this post, I was imagining sparse array model based on this sort of psuedocode
+
+{% syntax python %}
+class Element(models.Model):
+    array = models.ForeignKey('SparseArray')
+    value = models.FloatField()
+    x_ind = models.IntegerField()
+    y_ind = models.IntegerField()
+
+class SparseArray(models.Model):
+    # Fields for x_dim, y_dim, etc. along 
+    # with a method to access elements
+{% endsyntax %}
+
+This would be valuable if I desperately needed to access individual variables, but the extra cost of inserting all the extra Elements into the database would probably be too high.

@@ -1,0 +1,8 @@
+argparse
+commando
+jinja2
+pyYAML
+markdown
+smartypants
+pygments
+typogrify-hyde
