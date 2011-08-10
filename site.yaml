@@ -1,7 +1,7 @@
 mode: development
 media_root: /media
 media_url: /media # will use relative path, prepend "/" for absolute path
-base_url: http://localhost:8080/
+base_url: http://www.michaelgrosner.com
 plugins:
     - hyde.ext.plugins.meta.MetaPlugin
     - hyde.ext.plugins.auto_extend.AutoExtendPlugin
@@ -25,13 +25,19 @@ context:
             - title: Blog
               url: "/blog"
               type: node
-            - title: About
-              type: page
-              url: "/about.html"
-              type: page
+            #- title: About
+            #  type: page
+            #  url: "/about.html"
+            #  type: page
             - title: Github
               type: page
               url: "https://github.com/michaelgrosner"
+        colors:
+            background: "#fff"
+            light: "#84dad4" #"#ff8940"
+            medlight: "#006c64" #"#00a480"
+            med: "#14756e" #"#0f4fab"
+            dark: "#008e83"
 meta:
     nodemeta: meta.yaml
     created: !!timestamp 2010-01-01 00:00:00

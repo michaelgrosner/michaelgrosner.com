@@ -21,34 +21,40 @@
 <div id="header">
 	<a href="/" class="mgdotcom">michaelgrosner.com</a>
 	<div id="menu">
-			<a href="/blog">Blog</a>
-			<a href="/about.html">About</a>
-			<a href="https://github.com/michaelgrosner">Github</a>
+			<a href="/blog" class="link">Blog</a>
+			<a href="https://github.com/michaelgrosner" class="link">Github</a>
 		</div>
 </div>
 <div id="content">
-	<h2>Setting up a static site using Hyde</h2>
+	<h2><a href="http://www.michaelgrosner.com/blog/2011/8/5-installing-hyde.html">Setting up a static site using Hyde</a></h2>
 <time datetime="2011-08-05">
     Posted: Fri, 05 Aug 2011
 </time>
 
+<p>Tags: 
+Python, Hyde, Jinja2, Static Web Design
+</p>
 
+
+<p><article> <br />
+    This blog was written in Hyde, and I thought I&#8217;d provide a tutorial for those about to take it&nbsp;on.</p>
 <h3>Installing&nbsp;packages</h3>
-<p>I set up a virtualenv with pip then downloaded Hyde <code>pip install hyde</code>. In addition, I set up fabric as Steve Losh documented in his post <a href="http://stevelosh.com/blog/2010/01/moving-from-django-to-hyde/">Moving from Django to Hyde</a>.</p>
+<p>I set up a virtualenv with pip then downloaded Hyde using <code>pip install hyde</code>. In addition, I set up fabric as Steve Losh documented in his post <a href="http://stevelosh.com/blog/2010/01/moving-from-django-to-hyde/">Moving from Django to Hyde</a>. </p>
 <h3>First&nbsp;steps</h3>
-<p>The <a href="https://github.com/lakshmivyas/hyde/">github</a> documentation on Hyde is so broken, even the steps to initialize a project and generate content are out dated. Assuming you&#8217;re in your virtualenv, running <code>hyde create</code> will create the static application, which includes folders <code>content</code>, <code>layout</code>, and the file <code>site.yaml</code>.</p>
-<p>A better idea would be to follow Steve Losh&#8217;s fabfile in the section above. As with the github documentation, his fabfile&#8217;s command-line arguments are off. Use the updated commands&nbsp;below:</p>
+<p>The <a href="https://github.com/lakshmivyas/hyde/">github</a> documentation on Hyde is so broken, even the steps to initialize a project and generate content are out dated. Assuming you&#8217;re in your virtualenv or hyde is on your <code>$PATH</code>, running <code>hyde create</code> will create the static application, which includes folders <code>content</code>, <code>layout</code>, and the file <code>site.yaml</code>.</p>
+<p>A better idea would be to follow Steve Losh&#8217;s fabfile in the section above. As with the github documentation, his fabfile&#8217;s command-line arguments are outdated. Use the updated commands&nbsp;below:</p>
 <div class="codebox"><figure class="code"><div class="highlight"><pre>hyde create  <span class="c"># Create a project in the current directory</span><br />hyde gen     <span class="c"># Generate content and layouts for the current project</span><br />hyde serve   <span class="c"># Serve the generated content</span><br /></pre></div><br /><figcaption>Bash</figcaption></figure></div>
 
 <h3>An overview of the static&nbsp;site</h3>
 <p>At first, I was confused about which parts go where, Hyde is not like Django which enforces a strict, clear line between logic in <code>views.py</code>, data in <code>models.py</code>, and templates for the visual&nbsp;stuff.</p>
 <p>The folder <code>layout</code> contains the Jinja2 templates used in rendering the site. First, you will want to create a <code>base.j2</code> template to serve as your site-wide, base template. I provided a sample <code>base.j2</code> to illustrate a few&nbsp;points.</p>
 <h3>A base&nbsp;template</h3>
-<div class="codebox"><figure class="code"><div class="highlight"><pre><span class="x">&lt;!doctype html&gt;</span><br /><span class="x">&lt;head&gt;</span><br /><span class="x">    </span><br /><span class="x">    &lt;title&gt;</span><span class="cp">{%</span> <span class="k">block</span> <span class="nv">title</span> <span class="cp">%}{{</span> <span class="nv">resource.meta.title</span> <span class="cp">}}{%</span> <span class="k">endblock</span> <span class="nv">title</span> <span class="cp">%}</span><span class="x">&lt;/title&gt;</span><br />&nbsp;<br /><span class="x">    &lt;meta name=&quot;description&quot; content=&quot;</span><span class="cp">{{</span> <span class="nv">resource.meta.description</span> <span class="cp">}}</span><span class="x">&quot;&gt;</span><br /><span class="x">    &lt;meta name=&quot;author&quot; content=&quot;</span><span class="cp">{{</span> <span class="nv">resource.meta.author</span> <span class="cp">}}</span><span class="x">&quot;&gt;</span><br />&nbsp;<br /><span class="x">    &lt;link rel=&quot;stylesheet&quot; href=&quot;</span><span class="cp">{{</span> <span class="nv">media_url</span><span class="o">(</span><span class="s1">&#39;css/site.css&#39;</span><span class="o">)</span> <span class="cp">}}</span><span class="x">&quot;&gt;</span><br /><span class="x">    &lt;link rel=&quot;stylesheet&quot; href=&quot;</span><span class="cp">{{</span> <span class="nv">media_url</span><span class="o">(</span><span class="s1">&#39;css/pygments.css&#39;</span><span class="o">)</span> <span class="cp">}}</span><span class="x">&quot;&gt;</span><br />&nbsp;<br /><span class="x">&lt;/head&gt;</span><br /><span class="x">&lt;body&gt;</span><br /><span class="x">&lt;a href=&quot;</span><span class="cp">{{</span> <span class="nv">meta.base_url</span> <span class="cp">}}</span><span class="x">&quot; class=&quot;mgdotcom&quot;&gt;michaelgrosner.com&lt;/a&gt;&lt;br&gt;</span><br /><span class="x">&lt;hr&gt;</span><br /><span class="cp">{%</span> <span class="k">block</span> <span class="nv">content</span> <span class="cp">%}</span><span class="x"></span><br /><span class="cp">{%</span> <span class="k">endblock</span> <span class="nv">content</span> <span class="cp">%}</span><span class="x"></span><br />&nbsp;<br /><span class="x">    &lt;script src=&quot;//ajax.googleapis.com/ajax/libs/jquery/1.5.1/jquery.js&quot;&gt;&lt;/script&gt;</span><br />&nbsp;<br /><span class="x">&lt;/body&gt;</span><br /><span class="x">&lt;/html&gt;</span><br /></pre></div><br /><figcaption>Django/Jinja</figcaption></figure></div>
+<div class="codebox"><figure class="code"><div class="highlight"><pre><span class="x">&lt;!doctype html&gt;</span><br /><span class="x">&lt;head&gt;</span><br /><span class="x">    </span><br /><span class="x">    &lt;title&gt;</span><span class="cp">{%</span> <span class="k">block</span> <span class="nv">title</span> <span class="cp">%}{{</span> <span class="nv">resource.meta.title</span> <span class="cp">}}{%</span> <span class="k">endblock</span> <span class="nv">title</span> <span class="cp">%}</span><span class="x">&lt;/title&gt;</span><br />&nbsp;<br /><span class="x">    &lt;meta name=&quot;description&quot; content=&quot;</span><span class="cp">{{</span> <span class="nv">resource.meta.description</span> <span class="cp">}}</span><span class="x">&quot;&gt;</span><br /><span class="x">    &lt;meta name=&quot;author&quot; content=&quot;</span><span class="cp">{{</span> <span class="nv">resource.meta.author</span> <span class="cp">}}</span><span class="x">&quot;&gt;</span><br />&nbsp;<br /><span class="x">    &lt;link rel=&quot;stylesheet&quot; href=&quot;</span><span class="cp">{{</span> <span class="nv">media_url</span><span class="o">(</span><span class="s1">&#39;css/site.css&#39;</span><span class="o">)</span> <span class="cp">}}</span><span class="x">&quot;&gt;</span><br /><span class="x">    &lt;link rel=&quot;stylesheet&quot; href=&quot;</span><span class="cp">{{</span> <span class="nv">media_url</span><span class="o">(</span><span class="s1">&#39;css/pygments.css&#39;</span><span class="o">)</span> <span class="cp">}}</span><span class="x">&quot;&gt;</span><br />&nbsp;<br /><span class="x">&lt;/head&gt;</span><br /><span class="x">&lt;body&gt;</span><br /><span class="x">&lt;a href=&quot;/&quot; class=&quot;mgdotcom&quot;&gt;michaelgrosner.com&lt;/a&gt;&lt;br&gt;</span><br /><span class="x">&lt;hr&gt;</span><br /><span class="cp">{%</span> <span class="k">block</span> <span class="nv">content</span> <span class="cp">%}</span><span class="x"></span><br /><span class="cp">{%</span> <span class="k">endblock</span> <span class="nv">content</span> <span class="cp">%}</span><span class="x"></span><br />&nbsp;<br /><span class="x">    &lt;script src=&quot;//ajax.googleapis.com/ajax/libs/jquery/1.5.1/jquery.js&quot;&gt;&lt;/script&gt;</span><br />&nbsp;<br /><span class="x">&lt;/body&gt;</span><br /><span class="x">&lt;/html&gt;</span><br /></pre></div><br /><figcaption>Django/Jinja</figcaption></figure></div>
 
-<p>First question is: What is <code>resource</code> and <code>meta</code> for? Well, if you look in <code>site.yaml</code> created when you ran <code>hyde create</code>, you would notice fields such as <code>author</code>, which get placed into the <code>meta</code> variable. I&#8217;m still unclear about the workings of the <code>resource</code> variable, since <code>resource.meta.description</code> takes in a per-page description blurb (which will be demonstrated&nbsp;later)</p>
-<p>From the <code>base.j2</code> layout, subclassing of templates can continue on like as in Django by defining <code>block</code> tags and by using the <code>extends</code>. If you don&#8217;t know about this, consider <a href="https://docs.djangoproject.com/en/1.3/ref/templates/builtins/">Django&#8217;s excellent&nbsp;documentation</a></p>
-<p>Also notice the <code>media_url</code> function, which can be changed in <code>site.yaml</code>. Hyde comes with pygments support if you have it installed, thus the inclusion of <code>pygments.css</code> and can produce nice <span class="caps">CSS</span> for use by running the shell&nbsp;command</p>
+<p>First question is: What is <code>resource</code> and <code>meta</code> for? Well, if you look in <code>site.yaml</code> created when you ran <code>hyde create</code>, you would notice fields such as <code>author</code>, which get placed into the <code>meta</code> variable. I&#8217;m still unclear about the workings of the <code>resource</code> variable, since <code>resource.meta.description</code> takes in a per-page description blurb (which will be demonstrated&nbsp;later).</p>
+<p>From the <code>base.j2</code> layout, subclassing of templates can occur like as in Django by defining <code>block</code> tags and by using the <code>extends</code>. If you don&#8217;t know about this, consider <a href="https://docs.djangoproject.com/en/1.3/ref/templates/builtins/">Django&#8217;s excellent&nbsp;documentation</a></p>
+<p>Also notice the <code>media_url</code> function, which can be changed in <code>site.yaml</code>. Check out the <a href="https://github.com/hyde/hyde/blob/master/hyde/layouts/basic/site.yaml">Hyde github source</a> for a sample <code>site.yaml</code>.</p>
+<p>Hyde comes with pygments support if you have it installed, thus the inclusion of <code>pygments.css</code> and can produce nice <span class="caps">CSS</span> for use by running the shell&nbsp;command</p>
 <div class="codebox"><figure class="code"><div class="highlight"><pre>pygmentize -f html -S xxxxxx -a .highlight &gt; content/media/css/pygments.css<br /></pre></div><br /><figcaption>Bash</figcaption></figure></div>
 
 <p>Where <code>xxxxxx</code> is one of the <a href="http://pygments.org/docs/styles/">color schemes</a> supported by&nbsp;pygments.</p>
@@ -63,7 +69,7 @@
 <p>First, notice the yaml-style variables <code>title</code>, <code>description</code>, etc. These variables get imported into your layout files so, as in the sample <code>base.j2</code> provided above, one can simply use <code>Setting up a static site using Hyde</code> as a variable 
 which will reference the yaml in the content&nbsp;file.</p>
 <p>Next, notice the <code>extends</code> and <code>default_block</code> parameters. Assuming you&#8217;re extending a template (you should), these values are crucial to making sure the content knows where to&nbsp;render.</p>
-<p>Lastly, I&#8217;m not sure if it&#8217;s standard Hyde to include a <code>listable</code> variable (I believe it&#8217;s included in the sample site code), but it&#8217;s useful later in the <code>walk</code> function which can denote pages of interest, such as blog posts, for instance, or hide .swp files if you&#8217;re using&nbsp;vim.</p>
+<p>Lastly, I&#8217;m not sure if it&#8217;s standard Hyde to include a <code>listable</code> variable (I believe it&#8217;s included in the sample site code), but it&#8217;s useful later in the <code>walk</code> function which can denote pages of interest, such as blog posts, for instance, or hide hidden&nbsp;files.</p>
 <p>Like in the layout files, Jinja tags and <span class="caps">HTML</span> are available for use by a content file. For some reason, this really tripped me up when learning&nbsp;Hyde.</p>
 <h3>Walking and&nbsp;Linking</h3>
 <p>One of the template tags broken seemingly dozens of times thoroughout the documentation is getting a list of content&nbsp;files.</p>
@@ -71,7 +77,28 @@ which will reference the yaml in the content&nbsp;file.</p>
 <div class="codebox"><figure class="code"><div class="highlight"><pre><span class="x">&lt;ul&gt;</span><br /><span class="cp">{%</span> <span class="k">for</span> <span class="nv">res</span> <span class="k">in</span> <span class="nv">resource.node.walk_resources</span><span class="o">()</span> <span class="cp">%}</span><span class="x"></span><br /><span class="x">    </span><span class="cp">{%</span> <span class="k">if</span> <span class="nv">res.meta.listable</span> <span class="cp">%}</span><span class="x"></span><br /><span class="x">        &lt;a href=&quot;</span><span class="cp">{{</span> <span class="nv">res.full_url</span> <span class="cp">}}</span><span class="x">&quot;&gt;</span><span class="cp">{{</span> <span class="nv">res.meta.title</span> <span class="cp">}}</span><span class="x">&lt;/a&gt; </span><span class="cp">{{</span> <span class="nv">res.meta.created</span> <span class="cp">}}</span><span class="x">&lt;br&gt;</span><br /><span class="x">    </span><span class="cp">{%</span> <span class="k">endif</span> <span class="cp">%}</span><span class="x"></span><br /><span class="cp">{%</span> <span class="k">else</span> <span class="cp">%}</span><span class="x"></span><br /><span class="x">    No other pages&lt;br&gt;</span><br /><span class="cp">{%</span> <span class="k">endfor</span> <span class="cp">%}</span><span class="x"></span><br /><span class="x">&lt;/ul&gt;</span><br /></pre></div><br /><figcaption>Django/Jinja</figcaption></figure></div></p>
 <p>Each resource has a <code>full_url</code> parameter, which also references <code>site.yaml</code> to produce absolute URLs, and has access to the <code>meta</code> variables discussed&nbsp;previously.</p>
 <h3>Conclusion</h3>
-<p>I really like Hyde so far, I love the ability to create a decent static site using the Django/Jinja templating engine. What I can&#8217;t take is the lack of decent&nbsp;documentation.</p>
+<p>I really like Hyde so far, I love the ability to create a decent static site using the Django/Jinja templating engine. What I can&#8217;t take is the lack of decent documentation. As with any other open source project, some in-depth source reading will go a long&nbsp;way.`</p>
+</article>
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+    var disqus_shortname = 'michaelgrosner'; // required: replace example with your forum shortname
+
+    // The following are highly recommended additional parameters. Remove the slashes in front to use.
+    var disqus_identifier = 'Setting up a static site using Hyde';
+    var disqus_url = 'http://www.michaelgrosner.com/blog/2011/8/5-installing-hyde.html';
+
+    /* * * DON'T EDIT BELOW THIS LINE * * */
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">blog comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
 </div>
 	<script src="//ajax.googleapis.com/ajax/libs/jquery/1.5.1/jquery.js"></script>
 	<!-- Include google analytics here -->

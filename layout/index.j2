@@ -1,8 +1,39 @@
 {% extends "base.j2" %}
-
 {% block content %}
 
-{% block extracontent %}
-{% endblock extracontent %}
+<div id="homepage">
+<div class="welcome">
+<h2>About me</h2> 
+{% filter markdown|typogrify -%}
+	{% block welcometext %}{% endblock welcometext %}
+{%- endfilter %}
+Look for me on:
+<a href="http://twitter.com/michaelgrosner">Twitter</a>, 
+<a href="https://github.com/michaelgrosner">Github</a>,
+or <a href="http://www.linkedin.com/in/michaelgrosner">LinkedIn</a>
+</div>
+
+<div class="blog-preview">
+<h2>Recent Blog Posts</h2> 
+{% for res in resource.node.walk_resources()|sort(reverse=True,attribute="meta.created") %}
+	{% if res.meta.listable %}
+		{% if loop.index > 3 %}{% continue %}{% endif %}
+
+		<div class="item">
+
+			<h3><a href="{{ content_url(res.url) }}">{{ res.meta.title }}</a></h3><br>
+			<time datetime="{{ res.meta.created.strftime('%Y-%m-%d') }}">
+			    <b>{{ res.meta.created.strftime('%A, %B %d, %Y') }}</b>
+			</time>
+						
+			<p class="blurb">{{ res.meta.description }}</p>
+			
+		</div>
+	{% endif %}
+{% endfor %}
+<a href="/blog">See older posts...</a>
+</div>
+</div>
 
 {% endblock content %}
+

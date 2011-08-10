@@ -1,16 +1,44 @@
 {% extends "base.j2" %}
 
 {% block content %}
-<h2>{{ resource.meta.title }}</h2>
+<h2><a href="{{ content_url(resource.url) }}">{{ resource.meta.title }}</a></h2>
 <time datetime="{{ resource.meta.created.strftime('%Y-%m-%d') }}">
     Posted: {{ resource.meta.created.strftime('%a, %d %b %Y') }}
 </time>
 
+{% if resource.meta.tags|length > 0 %}
+<p>Tags: 
+{{ resource.meta.tags|join(", ") }}
+</p>
+{% endif %}
+
 
 {% filter markdown|typogrify -%}
 {% mark post -%}
+<article>	
 	{% block post -%}{%- endblock %}
+</article>
 {%- endmark %}
 {%- endfilter %}
+
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+    var disqus_shortname = 'michaelgrosner'; // required: replace example with your forum shortname
+
+    // The following are highly recommended additional parameters. Remove the slashes in front to use.
+    var disqus_identifier = '{{ resource.meta.title|urlize }}';
+    var disqus_url = '{{ resource.full_url }}';
+
+    /* * * DON'T EDIT BELOW THIS LINE * * */
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">blog comments powered by <span class="logo-disqus">Disqus</span></a>
+
 
 {% endblock content %}

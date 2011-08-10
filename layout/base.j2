@@ -22,7 +22,7 @@
 	<a href="/" class="mgdotcom">michaelgrosner.com</a>
 	<div id="menu">
 	{% for menu_item in menu %}
-		<a href="{{ menu_item.url }}">{{ menu_item.title }}</a>
+		<a href="{{ menu_item.url }}" class="link">{{ menu_item.title }}</a>
 	{% endfor %}
 	</div>
 </div>

@@ -1,18 +1,23 @@
 html {
-	background-color: #ffffff;
+	background-color: #fff;
 }
 body {
 	width: 800px;
 	margin: 0px auto;
 	font: 1.25em "minion-pro-1", "minion-pro-2", Palatino, Georgia, "Times New Roman", serif;
+	font-color: black;
 	line-height: 130%;
 }
 figcaption {
 	display: none;
 }
 h1 {
-	color: #0f4fa8;
+	color: #84dad4;
 	font-size: 1.5em;
+}
+h2 {
+	margin-bottom: .15em;
+	color: #14756e;
 }
 pre {
 	font-size: .8em;
@@ -22,19 +27,20 @@ pre {
 	line-height: 100%;
 }
 #header {
-	border-bottom: 5px solid #ff8940;
 	height: 40px;
+	border-bottom: 5px solid #84dad4;
 }
 a {
-	color: #FF6200;
 	text-decoration: none;
+	color: #006c64;
 }
 a.mgdotcom {
 	font-size: 1.3em;
 	float: left;
+	font-weight: bold;
 	top: 13px;
 	position: relative;
-	color: #0f4fab;
+	color: #008e83;
 }
 #menu {
 	float: right;
@@ -42,16 +48,48 @@ a.mgdotcom {
 	position: relative;
 	font-size: 1em;
 }
-a#menu {
-	padding-left: 10px;
+#menu .link {
+	margin-left: 10px;
+	color: #006c64 !important;
 }
 .listing {
 }
 .listing .item {
-	border: 1px solid;
-	width: 358px;
+	width: 760px;
 	margin: 10px;
-	float: left;
 	padding: 10px;
-	min-height: 300px;
+}
+.listing .item h3 {
+	display: inline-block;
+	margin-bottom: 0em;
+	font-size: 1.5em;
+}
+.listing .item p {
+	margin-top: 0em;
+}
+
+/* homepage specific css */
+.welcome {
+	width: 350px;
+	float: left;
+	padding: 25px;
+}
+.blog-preview {
+	width: 350px;
+	float: right;
+	padding: 25px;
+}
+#homepage h2 {
+	color: #14756e;
+}
+.blog-preview .item h3 {
+	display: inline-block;
+	margin-bottom: 0em;
+	font-size: 1.25em;
+}
+.blog-preview .item p {
+	margin-top: 0em;
+}
+.blog-preview .blurb {
+	font-size: .8em;
 }
