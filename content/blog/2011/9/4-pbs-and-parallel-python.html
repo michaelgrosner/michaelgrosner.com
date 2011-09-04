@@ -1,0 +1,129 @@
+---
+title: Using Python for Cluster Computing with Parallel Python
+description: Running Python code on a cluster with several multicore nodes can be easy when using PBS queueing and Parallel Python
+created: !!timestamp 2011-09-04 11:26:00
+extends: blog.j2
+default_block: post
+listable: true
+tags:
+    - Python
+    - PBS
+    - Parallel Python
+    - PBS
+---
+
+Here's a hypothetical scenario: I have an embarassingly parallel problem or my parameter space is flexible enough to allow compuation on multiple, distributed nodes in a cluster. My code works as advertised in single processor, standard Python (or can be called from a Python script) and I'm ready to scale up to a cluster to begin collecting data for analysis. Also, my cluster uses [PBS (Portable Batch System)](https://biomaps.rutgers.edu/wiki/PBS_on_Gyges) via `qsub` to submit and manage jobs.
+
+I have a few options:
+
+* Learn MPI and use a Python wrapper - Probably the best option, but I'm trying to get this simulation running quickly
+* Submit a qsub script for every parameter configuration - Or even better, make a script which makes and submit job scripts
+* Use a simple package like [Parallel Python](http://www.parallelpython.com/) to handle the multithreading and communication between nodes.
+
+I found myself in this predicament, and since there was little documentation on how to use Parallel Python to set up my specific simlations, I decided to share my solution.
+
+### The Python Code
+
+The [Parallel Python Documentation](http://www.parallelpython.com/content/view/15/30/#ADVANCEDCLUSTERS) gives an-almost complete description of how to set up your Python code for `pp`. A slightly more in-depth (and relevant) example than given in the documentation is provided below
+
+{% syntax python %}
+import pp
+import os
+
+def add_one(x):
+    """An example of a depfunc. The job server needs to be aware of 
+    the function's existence"""
+    return x+1
+
+def parallel_function(parameter):
+    """ This is the function to be parallelized. It takes (as far 
+    as I can tell, only non-keyworded args. Of note is if you're 
+    using Python to call C/C++ code which makes output to stdout, 
+    it interferes with the `pp` communication. On the other hand,
+    using Python stdout, like printing os.getcwd() works fine. """
+    parameter = add_one(parameter)
+    print os.getcwd()
+    return parameter
+
+# Results will hold all returned values from the parallelized function
+results = []
+
+# To get a list of `ppservers`, skip down to the next section on 
+# writing the qsub script
+job_server = pp.Server(ppservers=ppservers)
+for p in parameters:
+    job_server.submit(parallel_function,
+            args=(p,),
+            depfuncs=(add_one,),
+            modules=('os'),
+            callback=results.append)
+job_server.wait()
+
+print results
+{% endsyntax %}
+
+### The `qsub` Script
+
+When using PBS, a script runs on some master node for the job and it's up to the coder to make sure all nodes are listening for work. Running something like
+
+{% syntax bash %}
+#!/bin/sh
+#PBS -l nodes=4
+
+python parallel_code.py
+{% endsyntax %}
+
+Will only run `parallel_code.py` on the master node while the other 3 nodes sit idle, wasting your allotted compute time. Even doing
+
+{% syntax bash %}
+#!/bin/sh
+#PBS -l nodes=4
+
+for i in {1..4}
+do
+    python parallel_code.py &
+done
+wait
+{% endsyntax %}
+
+Will not make PBS send each ampersanded task to a different node. The solution is to `ssh` into all the other nodes and start some process which will accept and compute tasks. Something like,
+
+{% syntax bash %}
+
+#!/bin/sh
+#PBS -l nodes=4
+cd $PBS_O_WORKDIR
+
+# Grab the list of unique nodes (each processor on a node shows up as 
+# its own listing if using -l select=X), this is assuming only 
+# -l nodes=Y is used.
+NODES=`cat $PBS_NODEFILE | uniq`
+
+# Make a file in so the Python script can read it to make the 
+# `ppservers` argument to pp.Server and so I can see which 
+# nodes are running later on.
+echo $NODES > nodefile.txt
+
+# Declare a port for parallel python traffic
+PORT=23335
+
+# Each PBS job's master node is given some environmental 
+# variables (see http://doesciencegrid.org/public/pbs/qsub.html), 
+# one of which is TMPDIR which creates a temporary folder on 
+# the node for I/O... but it's not given to each child. Export 
+# it to each node, in your Python code, use os.environ['TMPDIR'] 
+# to use that location.
+for n in $NODES
+do
+    ssh -f grosner@$n "cd $PBS_O_WORKDIR; mkdir -p $TMPDIR; export TMPDIR=$TMPDIR; ppserver.py -p $PORT &" &
+done
+
+# Run the simulations
+python run_closure.py $PORT
+{% endsyntax %}
+
+Now `ppserver.py` should be running on every node PBS assigns to you. There is also a `-t` flag to specify the timeout before `ppserver.py` terminates itself. I don't use it since I've been having issues with it.
+
+### Conclusion
+
+Now that everything should be working, your code should be parallelized to as many nodes as you can get your hands on. There are some issues with error reporting in Parallel Python, especially since it looks like `ppserver.py` only gets a string of the code and calls `exec` or `eval` on it, so errors may be unhelpful. Therefore, test your code in both single threaded and possilbly single node mode using the standard `multiprocessing` module.

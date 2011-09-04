@@ -1,0 +1,3 @@
+[console_scripts]
+hyde = hyde.main:main
+

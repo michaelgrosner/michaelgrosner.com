@@ -1,0 +1,104 @@
+
+<!doctype html>
+<head>
+	
+	<meta charset="">
+	<meta http-equiv="X-UA-Compatible" content="">
+
+	<title>Using Python for Cluster Computing with Parallel Python</title>
+
+	<meta name="description" content="Running Python code on a cluster with several multicore nodes can be easy when using PBS queueing and Parallel Python">
+	<meta name="author" content="Michael Grosner">
+	<meta name="viewport" content="">
+
+	<link href='http://fonts.googleapis.com/css?family=Inconsolata' rel='stylesheet' type='text/css'>
+
+	<link rel="stylesheet" href="/media/css/site.css">
+	<link rel="stylesheet" href="/media/css/pygments.css">
+
+<script type="text/javascript">
+	
+	var _gaq = _gaq || [];
+	_gaq.push(['_setAccount', 'UA-25045616-1']);
+	_gaq.push(['_trackPageview']);
+	
+	(function() {
+	var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+	ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+	var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+	})();
+	
+</script>
+	
+</head>
+<body>
+<div id="header">
+	<a href="/" class="mgdotcom">michaelgrosner.com</a>
+	<div id="menu">
+			<a href="/blog" class="link">Blog</a>
+			<a href="https://github.com/michaelgrosner" class="link">Github</a>
+		</div>
+</div>
+<div id="content">
+	<h2><a href="http://www.michaelgrosner.com/blog/2011/9/4-pbs-and-parallel-python.html">Using Python for Cluster Computing with Parallel Python</a></h2>
+<time datetime="2011-09-04">
+    Posted: Sun, 04 Sep 2011
+</time>
+
+<p>Tags: 
+Python, PBS, Parallel Python, PBS
+</p>
+
+
+<p><article> <br />
+    Here&#8217;s a hypothetical scenario: I have an embarassingly parallel problem or my parameter space is flexible enough to allow compuation on multiple, distributed nodes in a cluster. My code works as advertised in single processor, standard Python (or can be called from a Python script) and I&#8217;m ready to scale up to a cluster to begin collecting data for analysis. Also, my cluster uses <a href="https://biomaps.rutgers.edu/wiki/PBS_on_Gyges"><span class="caps">PBS</span> (Portable Batch System)</a> via <code>qsub</code> to submit and manage&nbsp;jobs.</p>
+<p>I have a few&nbsp;options:</p>
+<ul>
+<li>Learn <span class="caps">MPI</span> and use a Python wrapper - Probably the best option, but I&#8217;m trying to get this simulation running&nbsp;quickly</li>
+<li>Submit a qsub script for every parameter configuration - Or even better, make a script which makes and submit job&nbsp;scripts</li>
+<li>Use a simple package like <a href="http://www.parallelpython.com/">Parallel Python</a> to handle the multithreading and communication between&nbsp;nodes.</li>
+</ul>
+<p>I found myself in this predicament, and since there was little documentation on how to use Parallel Python to set up my specific simlations, I decided to share my&nbsp;solution.</p>
+<h3>The Python&nbsp;Code</h3>
+<p>The <a href="http://www.parallelpython.com/content/view/15/30/#ADVANCEDCLUSTERS">Parallel Python Documentation</a> gives an-almost complete description of how to set up your Python code for <code>pp</code>. A slightly more in-depth (and relevant) example than given in the documentation is provided&nbsp;below</p>
+<div class="codebox"><figure class="code"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">pp</span><br /><span class="kn">import</span> <span class="nn">os</span><br />&nbsp;<br /><span class="k">def</span> <span class="nf">add_one</span><span class="p">(</span><span class="n">x</span><span class="p">):</span><br />    <span class="sd">&quot;&quot;&quot;An example of a depfunc. The job server needs to be aware of </span><br /><span class="sd">    the function&#39;s existence&quot;&quot;&quot;</span><br />    <span class="k">return</span> <span class="n">x</span><span class="o">+</span><span class="mi">1</span><br />&nbsp;<br /><span class="k">def</span> <span class="nf">parallel_function</span><span class="p">(</span><span class="n">parameter</span><span class="p">):</span><br />    <span class="sd">&quot;&quot;&quot; This is the function to be parallelized. It takes (as far </span><br /><span class="sd">    as I can tell, only non-keyworded args. Of note is if you&#39;re </span><br /><span class="sd">    using Python to call C/C++ code which makes output to stdout, </span><br /><span class="sd">    it interferes with the `pp` communication. On the other hand,</span><br /><span class="sd">    using Python stdout, like printing os.getcwd() works fine. &quot;&quot;&quot;</span><br />    <span class="n">parameter</span> <span class="o">=</span> <span class="n">add_one</span><span class="p">(</span><span class="n">parameter</span><span class="p">)</span><br />    <span class="k">print</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span><br />    <span class="k">return</span> <span class="n">parameter</span><br />&nbsp;<br /><span class="c"># Results will hold all returned values from the parallelized function</span><br /><span class="n">results</span> <span class="o">=</span> <span class="p">[]</span><br />&nbsp;<br /><span class="c"># To get a list of `ppservers`, skip down to the next section on </span><br /><span class="c"># writing the qsub script</span><br /><span class="n">job_server</span> <span class="o">=</span> <span class="n">pp</span><span class="o">.</span><span class="n">Server</span><span class="p">(</span><span class="n">ppservers</span><span class="o">=</span><span class="n">ppservers</span><span class="p">)</span><br /><span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">parameters</span><span class="p">:</span><br />    <span class="n">job_server</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span><span class="n">parallel_function</span><span class="p">,</span><br />            <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">p</span><span class="p">,),</span><br />            <span class="n">depfuncs</span><span class="o">=</span><span class="p">(</span><span class="n">add_one</span><span class="p">,),</span><br />            <span class="n">modules</span><span class="o">=</span><span class="p">(</span><span class="s">&#39;os&#39;</span><span class="p">),</span><br />            <span class="n">callback</span><span class="o">=</span><span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">)</span><br /><span class="n">job_server</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span><br />&nbsp;<br /><span class="k">print</span> <span class="n">results</span><br /></pre></div><br /><figcaption>Python</figcaption></figure></div>
+
+<h3>The <code>qsub</code> Script</h3>
+<p>When using <span class="caps">PBS</span>, a script runs on some master node for the job and it&#8217;s up to the coder to make sure all nodes are listening for work. Running something&nbsp;like</p>
+<div class="codebox"><figure class="code"><div class="highlight"><pre><span class="c">#!/bin/sh</span><br /><span class="c">#<span class="caps">PBS</span> -l nodes=4</span><br />&nbsp;<br />python parallel_code.py<br /></pre></div><br /><figcaption>Bash</figcaption></figure></div>
+
+<p>Will only run <code>parallel_code.py</code> on the master node while the other 3 nodes sit idle, wasting your allotted compute time. Even&nbsp;doing</p>
+<div class="codebox"><figure class="code"><div class="highlight"><pre><span class="c">#!/bin/sh</span><br /><span class="c">#<span class="caps">PBS</span> -l nodes=4</span><br />&nbsp;<br /><span class="k">for </span>i in <span class="o">{</span>1..4<span class="o">}</span><br /><span class="k">do</span><br /><span class="k">    </span>python parallel_code.py &amp;<br /><span class="k">done</span><br /><span class="nb">wait</span><br /></pre></div><br /><figcaption>Bash</figcaption></figure></div>
+
+<p>Will not make <span class="caps">PBS</span> send each ampersanded task to a different node. The solution is to <code>ssh</code> into all the other nodes and start some process which will accept and compute tasks. Something&nbsp;like,</p>
+<div class="codebox"><figure class="code"><div class="highlight"><pre><span class="c">#!/bin/sh</span><br /><span class="c">#<span class="caps">PBS</span> -l nodes=4</span><br /><span class="nb">cd</span> <span class="nv">$PBS_O_WORKDIR</span><br />&nbsp;<br /><span class="c"># Grab the list of unique nodes (each processor on a node shows up as </span><br /><span class="c"># its own listing if using -l select=X), this is assuming only </span><br /><span class="c"># -l nodes=Y is used.</span><br /><span class="nv"><span class="caps">NODES</span></span><span class="o">=</span><span class="sb">`</span>cat <span class="nv">$PBS_NODEFILE</span> | uniq<span class="sb">`</span><br />&nbsp;<br /><span class="c"># Make a file in so the Python script can read it to make the </span><br /><span class="c"># `ppservers` argument to pp.Server and so I can see which </span><br /><span class="c"># nodes are running later on.</span><br /><span class="nb">echo</span> <span class="nv">$<span class="caps">NODES</span></span> &gt; nodefile.txt<br />&nbsp;<br /><span class="c"># Declare a port for parallel python traffic</span><br /><span class="nv"><span class="caps">PORT</span></span><span class="o">=</span>23335<br />&nbsp;<br /><span class="c"># Each <span class="caps">PBS</span> job&#39;s master node is given some environmental </span><br /><span class="c"># variables (see http://doesciencegrid.org/public/pbs/qsub.html), </span><br /><span class="c"># one of which is <span class="caps">TMPDIR</span> which creates a temporary folder on </span><br /><span class="c"># the node for I/O... but it&#39;s not given to each child. Export </span><br /><span class="c"># it to each node, in your Python code, use os.environ[&#39;<span class="caps">TMPDIR</span>&#39;] </span><br /><span class="c"># to use that location.</span><br /><span class="k">for </span>n in <span class="nv">$<span class="caps">NODES</span></span><br /><span class="k">do</span><br /><span class="k">    </span>ssh -f grosner@<span class="nv">$n</span> <span class="s2">&quot;cd $PBS_O_WORKDIR; mkdir -p $<span class="caps">TMPDIR</span>; export <span class="caps">TMPDIR</span>=$<span class="caps">TMPDIR</span>; ppserver.py -p $<span class="caps">PORT</span> &amp;&quot;</span> &amp;<br /><span class="k">done</span><br />&nbsp;<br /><span class="c"># Run the simulations</span><br />python run_closure.py <span class="nv">$<span class="caps">PORT</span></span><br /></pre></div><br /><figcaption>Bash</figcaption></figure></div>
+
+<p>Now <code>ppserver.py</code> should be running on every node <span class="caps">PBS</span> assigns to you. There is also a <code>-t</code> flag to specify the timeout before <code>ppserver.py</code> terminates itself. I don&#8217;t use it since I&#8217;ve been having issues with&nbsp;it.</p>
+<h3>Conclusion</h3>
+<p>Now that everything should be working, your code should be parallelized to as many nodes as you can get your hands on. There are some issues with error reporting in Parallel Python, especially since it looks like <code>ppserver.py</code> only gets a string of the code and calls <code>exec</code> or <code>eval</code> on it, so errors may be unhelpful. Therefore, test your code in both single threaded and possilbly single node mode using the standard <code>multiprocessing</code> module.</p>
+</article>
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+    var disqus_shortname = 'michaelgrosner'; // required: replace example with your forum shortname
+
+    // The following are highly recommended additional parameters. Remove the slashes in front to use.
+    var disqus_identifier = 'Using Python for Cluster Computing with Parallel Python';
+    var disqus_url = 'http://www.michaelgrosner.com/blog/2011/9/4-pbs-and-parallel-python.html';
+
+    /* * * DON'T EDIT BELOW THIS LINE * * */
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">blog comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+</div>
+	<script src="//ajax.googleapis.com/ajax/libs/jquery/1.5.1/jquery.js"></script>
+	<!-- Include google analytics here -->
+</body>
+</html>
