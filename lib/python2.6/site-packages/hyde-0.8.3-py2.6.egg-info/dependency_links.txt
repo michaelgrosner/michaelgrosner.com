@@ -1,1 +1,0 @@
-https://github.com/hyde/typogrify/tarball/hyde-setup#egg=typogrify-hyde

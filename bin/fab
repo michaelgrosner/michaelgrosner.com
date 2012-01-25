@@ -1,4 +1,4 @@
-#!/Users/Michael/Dropbox/blog/bin/python
+#!/Users/grosner/Dropbox/blog/bin/python
 # EASY-INSTALL-ENTRY-SCRIPT: 'Fabric==1.2.0','console_scripts','fab'
 __requires__ = 'Fabric==1.2.0'
 import sys
