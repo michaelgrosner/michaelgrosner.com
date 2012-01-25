@@ -1,0 +1,53 @@
+---
+title: Batch Updates in MySQL
+description: Although not well documented, there is a method to do batch updates in MySQL. This has been my experience so far
+created: !!timestamp 2011-10-07 22:09:00
+extends: blog.j2
+default_block: post
+listable: true
+tags:
+    - SQL
+    - Updates
+    - Batch Update
+---
+
+Did you know you can JOIN in an UPDATE in MySQL to update entire columns? It's not in the MySQL documentation and since I'm still learning SQL, I'd like to share my discovery.
+
+### Setting the Stage
+
+I have a table of proteins bound to my DNA loops called `boundprotein` with foreign keys to the table `loop`. Side note: Since I run this code on the cluster, it helps to not have integer foreign keys to the table `loop`, so instead I use a CHAR string close to a hash. 
+
+Here's my scheme, vastly simplified:
+
+* `loop`
+    * `id`
+* `boundprotein`
+    * `loop_id`
+    * `ideal_id`
+
+I'd like to count the amount of each type of bound protein to each loop and put that count into a new column. I'm only considering the counts of Fis, a protein found in E. coli, so the column name will be `n_fis`. Why would I do this? I now have 100 million loops and 180 million bound proteins in the database and the analysis is taking much too long to keep on joining, even with indices.
+
+I have all the information in the database, how can I quickly update this with one query?
+
+### The Wrong and Right Ways
+
+Here's how *not* to do it:
+{% syntax mysql %}
+UPDATE lacdb.loop l 
+    SET l.n_fis = (SELECT Count(*) 
+                   FROM lacdb.boundprotein bp 
+                   WHERE ideal_id = "Fis" AND l.id = bp.loop_id)
+{% endsyntax %}
+
+As you may be able to tell, MySQL will run a select across `boundprotein` for every `loop`. Horribly inefficent.
+
+Here's the *correct* way:
+{% syntax mysql %}
+UPDATE lacdb.loop l 
+    LEFT JOIN lacdb.boundprotein bp ON (l.id = bp.loop_id) 
+    WHERE bp.ideal_id = 'Fis' 
+    GROUP BY l.id 
+    SET l.n_fis = Count(bp.loop_id);
+{% endsyntax %}
+
+One JOIN, much quicker.

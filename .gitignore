@@ -1,0 +1,7 @@
+vimsession
+lib
+deploy
+bin
+.Python
+*.swp
+*.pyc
