@@ -120,9 +120,6 @@
 
     CanvasContext.prototype.init = function() {
       var el, _i, _len, _ref;
-      if ($("#debug-info").length) {
-        this.canvas.addEventListener('mousemove', this.showAtomInfo);
-      }
       this.mouse_x_prev = 0;
       this.mouse_y_prev = 0;
       _ref = this.elements;
@@ -132,11 +129,15 @@
       }
       $("#reset").on("click", this.restoreToOriginal);
       this.canvas.addEventListener('mousedown', this.mousedown);
+      this.canvas.addEventListener('DOMMouseScroll', this.changeZoom);
       this.canvas.addEventListener('mousewheel', this.changeZoom);
       this.canvas.addEventListener('dblclick', this.translateOrigin);
       this.findBonds();
       this.assignSelectors();
-      this.determinePointGrid();
+      if ($("#debug-info").length) {
+        this.canvas.addEventListener('mousemove', this.showAtomInfo);
+        this.determinePointGrid();
+      }
       return this.restoreToOriginal();
     };
 
@@ -305,11 +306,12 @@
     };
 
     CanvasContext.prototype.changeZoom = function(e) {
-      if (e instanceof WheelEvent) {
-        this.zoom = this.zoom_prev - e.wheelDelta / 50;
+      if (e.hasOwnProperty('wheelDelta')) {
+        this.zoom = this.zoom_prev - e.wheelDelta / 50.0;
       } else {
-        this.zoom = this.zoom_prev - e;
+        this.zoom = this.zoom_prev - e.detail / 50.0;
       }
+      e.preventDefault();
       this.clear();
       if (this.zoom > 0) {
         this.drawAll();
@@ -1036,6 +1038,90 @@
 
   })();
 
+  if ($("#debug-info").length) {
+    $("#add-new-structure .submit").on('click', addNewStructure);
+    fitCtxInfo = function() {
+      var c, top, w_height;
+      c = $("#ctx-info");
+      top = c.offset().top;
+      w_height = $(window).height();
+      return c.height(w_height - top - 100);
+    };
+    fitCtxInfo();
+    $(window).resize(fitCtxInfo);
+    fade = "out";
+    $("#show-ctx-container").on("click", function() {
+      if (fade === "in") {
+        return $(".cc-size").fadeIn("fast", function() {
+          fade = "out";
+          return $("#show-ctx-container").html("<< Options");
+        });
+      } else if (fade === "out") {
+        return $(".cc-size").fadeOut("fast", function() {
+          fade = "in";
+          return $("#show-ctx-container").html("Options >>");
+        });
+      }
+    });
+    $("#help-area").on("click", function() {
+      return $(this).css("display", "none");
+    });
+    structuresToLoad = {
+      "PDBs/A1_open_2HU_78bp_1/out-1-16.pdb": {
+        drawMethod: "cartoon",
+        drawColor: [47, 254, 254]
+      },
+      "PDBs/A1_open_2HU_78bp_1/half1_0.pdb": {
+        drawMethod: "cartoon",
+        drawColor: [254, 0, 254]
+      },
+      "PDBs/A1_open_2HU_78bp_1/half2-78bp-ID0_B1-16.pdb": {
+        drawMethod: "cartoon",
+        drawColor: [254, 0, 254]
+      },
+      "PDBs/A1_open_2HU_78bp_1/proteins-78bp-ID0_B1-16.pdb": {
+        drawMethod: "cartoon",
+        drawColor: [251, 251, 1]
+      }
+    };
+    "structuresToLoad =\n	\"PDBs/half1_0.pdb\":\n		drawMethod: \"cartoon\"\n\nstructuresToLoad =\n	\"http://www.rcsb.org/pdb/files/1MMS.pdb\":\n		drawMethod: \"both\"\n		#drawColor: [47, 254, 254]";
+    dismissWelcomeSplash = function() {
+      $("#show-ctx-container").css("display", "block");
+      $(".cc-size").css("display", "block");
+      return $("#welcome-splash").fadeOut("fast");
+    };
+    if (!(structuresToLoad != null)) {
+      $("#show-ctx-container").css("display", "none");
+      $(".cc-size").css("display", "none");
+      $("#welcome-splash").css({
+        left: $(window).width() / 2 - $("#welcome-splash").outerWidth() / 2,
+        top: $(window).height() / 2 - $("#welcome-splash").outerHeight() / 2
+      });
+      $("#welcome-splash").fadeIn("fast", function() {
+        $("#show-ctx-container").fadeIn("fast");
+        $(".sample-pdb-link").on("click", dismissWelcomeSplash);
+        return $("#welcome-splash #dismiss").on("click", dismissWelcomeSplash);
+      });
+    } else {
+      loadFromDict(structuresToLoad);
+    }
+    ctx.init();
+    ctx.writeContextInfo();
+    $(".open-dropdown").on("click", function(e) {
+      var d;
+      d = $(this).next();
+      if ((d.filter(":hidden")).length === 1) {
+        d.css({
+          'top': e.pageY,
+          'left': e.pageX
+        });
+        return d.fadeIn("fast");
+      } else {
+        return d.fadeOut("fast");
+      }
+    });
+  }
+
   ATOM_SIZE = 3;
 
   DEBUG = true;
@@ -1342,89 +1428,5 @@
   window.loadPDBAsStructure = loadPDBAsStructure;
 
   window.fromSplashLink = fromSplashLink;
-
-  if ($("#debug-info").length) {
-    $("#add-new-structure .submit").on('click', addNewStructure);
-    fitCtxInfo = function() {
-      var c, top, w_height;
-      c = $("#ctx-info");
-      top = c.offset().top;
-      w_height = $(window).height();
-      return c.height(w_height - top - 100);
-    };
-    fitCtxInfo();
-    $(window).resize(fitCtxInfo);
-    fade = "out";
-    $("#show-ctx-container").on("click", function() {
-      if (fade === "in") {
-        return $(".cc-size").fadeIn("fast", function() {
-          fade = "out";
-          return $("#show-ctx-container").html("<< Options");
-        });
-      } else if (fade === "out") {
-        return $(".cc-size").fadeOut("fast", function() {
-          fade = "in";
-          return $("#show-ctx-container").html("Options >>");
-        });
-      }
-    });
-    $("#help-area").on("click", function() {
-      return $(this).css("display", "none");
-    });
-    structuresToLoad = {
-      "PDBs/A1_open_2HU_78bp_1/out-1-16.pdb": {
-        drawMethod: "cartoon",
-        drawColor: [47, 254, 254]
-      },
-      "PDBs/A1_open_2HU_78bp_1/half1_0.pdb": {
-        drawMethod: "cartoon",
-        drawColor: [254, 0, 254]
-      },
-      "PDBs/A1_open_2HU_78bp_1/half2-78bp-ID0_B1-16.pdb": {
-        drawMethod: "cartoon",
-        drawColor: [254, 0, 254]
-      },
-      "PDBs/A1_open_2HU_78bp_1/proteins-78bp-ID0_B1-16.pdb": {
-        drawMethod: "cartoon",
-        drawColor: [251, 251, 1]
-      }
-    };
-    "structuresToLoad =\n	\"PDBs/half1_0.pdb\":\n		drawMethod: \"cartoon\"\n\nstructuresToLoad =\n	\"http://www.rcsb.org/pdb/files/1MMS.pdb\":\n		drawMethod: \"both\"\n		#drawColor: [47, 254, 254]";
-    dismissWelcomeSplash = function() {
-      $("#show-ctx-container").css("display", "block");
-      $(".cc-size").css("display", "block");
-      return $("#welcome-splash").fadeOut("fast");
-    };
-    if (!(structuresToLoad != null)) {
-      $("#show-ctx-container").css("display", "none");
-      $(".cc-size").css("display", "none");
-      $("#welcome-splash").css({
-        left: $(window).width() / 2 - $("#welcome-splash").outerWidth() / 2,
-        top: $(window).height() / 2 - $("#welcome-splash").outerHeight() / 2
-      });
-      $("#welcome-splash").fadeIn("fast", function() {
-        $("#show-ctx-container").fadeIn("fast");
-        $(".sample-pdb-link").on("click", dismissWelcomeSplash);
-        return $("#welcome-splash #dismiss").on("click", dismissWelcomeSplash);
-      });
-    } else {
-      loadFromDict(structuresToLoad);
-    }
-    ctx.init();
-    ctx.writeContextInfo();
-    $(".open-dropdown").on("click", function(e) {
-      var d;
-      d = $(this).next();
-      if ((d.filter(":hidden")).length === 1) {
-        d.css({
-          'top': e.pageY,
-          'left': e.pageX
-        });
-        return d.fadeIn("fast");
-      } else {
-        return d.fadeOut("fast");
-      }
-    });
-  }
 
 }).call(this);
