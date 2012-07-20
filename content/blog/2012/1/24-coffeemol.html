@@ -29,14 +29,15 @@ ctx = window.ctx;
 window.loadFromDict(structures);
 ctx.init();
 </script>
+Above: Myoglobin (1MBO)
 
-I present [CoffeeMol](http://www.michaelgrosner.com/coffeemol) (check out the [Source](https://github.com/michaelgrosner/CoffeeMol)), an embeddable JavaScript Molecular Visualizer for HTML5 Browsers written in CoffeeScript and jQuery. CoffeeMol offers the ability to view and manipulate molecular structures in any modern, standards compliant browser -- including many mobile devices (multi-touch support in development). 
+I present [CoffeeMol](http://www.michaelgrosner.com/coffeemol) (check out the [Source](https://github.com/michaelgrosner/CoffeeMol)), an embeddable, customizable, interactive ([try this out!](javascript:window.ctx.changeInfoFromSelectors('0', 'drawMethod', 'lines'))) JavaScript Molecular Visualizer for HTML5 Browsers written in CoffeeScript and jQuery. CoffeeMol offers the ability to view and manipulate molecular structures in any modern, standards compliant browser -- including many mobile devices. 
 
-CoffeeMol was developed by myself on the side while developing a web interface for simulated structures I am generating in my grad school work. It is written out of frustration stemming from having to load PDB files into PyMol, orient to a view, save the PNG file, load it onto the webserver, and remember the URL, all while only getting a few views of the molecule. Instead, with only a few lines of JavaScript can load an viewer capable of displaying complex molecules. In addition, it doesn't require antiquated browser applets.
+CoffeeMol was developed by myself while implementing a web interface for some simulated structures I needed in my grad school work. It doesn't require crazy PyMol hacks, use of in-browser Java like JMol, and can be used on nearly every modern web device.
 
 ### To embed into an existing webpage
 
-This will reproduce the viewer above, except the viewer above only contains the first PDB file in `structures` and the styling via CSS changes is different.
+This will reproduce the viewer above, except the viewer above only contains the first PDB file in `structures` and the CSS styles are different.
 
 * Compile -- You'll need to install [CoffeeScript](http://coffeescript.org/#installation), or copy the compiled JS [here](http://www.michaelgrosner.com/CoffeeMol.js)
 
@@ -61,7 +62,7 @@ $ coffee -cj CoffeeMol.coffee CanvasContext.coffee Element.coffee Structure.coff
 // Change this dictionary to suit your PDB needs
 structures = {
     "http://www.rcsb.org/pdb/files/1MBO.pdb": {  // URL to a well-behaved PDB file
-        drawMethod: "both",                      // Use 'lines', 'points', or 'both'
+        drawMethod: "both",                      // Use 'lines', 'points', 'cartoon' or 'both'
         drawColor: [255, 0, 0]                   // RGB color (optional)
     },
     "/static/pdbs/1KX5.pdb": {                   // Can mix structures and properties
@@ -81,5 +82,25 @@ ctx.init();
 ### To use the full, interactive mode
 
 Go to the [CoffeeMol Interactive Viewer](http://www.michaelgrosner.com/coffeemol)
+
+### Structure Options
+
+* `drawMethod` - Choose one of the following options
+    * `points` - Draw each atom as a ball, colored by element type if no `drawColor` is provided
+    * `lines` - Draw as bonds between atoms.
+    * `cartoon` - Draw "bonds" between C-alpha atoms in protein and along DNA Phosphate backbone. Much quicker rendering than other methods.
+    * `both` - Draw `points` on top of `bonds`. Visually pleasing, computationally intensive.
+* `drawColor` - Provide a length 3 array or a string of the form `#XXXXXX` corresponding to RGB values
+* `borderColor` - Atoms in `points` have a thin border around each atom. Change this color.
+
+### Known Issues
+
+This is pre-alpha software, there are probably many unknown issues in additiion to these
+
+* Very slow on iOS and slow with larger structures
+* Only tested on the latest Chrome, Firefox, and Safari versions as of 1/26/12 on a Mac running Lion
+* Rotation speed is bounded due to roundoff error? Bad math?
+* Synchronous AJAX requests only work, i.e. `$.ajax` with `async: true`
+* Highly unoptimized
 
 And enjoy! (And send bug reports/feature requests via Github!)

@@ -1,96 +1,43 @@
 (function() {
-  var ATOM_SIZE, Atom, Bond, CanvasContext, Chain, DEBUG, Element, Residue, Selector, Structure, addNewStructure, arrayToRGB, atomAtomDistance, atom_colors, ctx, defaultInfo, degToRad, delay, dismissWelcomeSplash, encodeHTML, fade, fitCtxInfo, fromSplashLink, genIFSLink, hexToRGBArray, isBonded, loadFromDict, loadPDBAsStructure, mousePosition, nuc_acids, pdbAtomToDict, radToDeg, randomDrawMethod, randomInt, randomRGB, selector_delimiter, sortBondsByZ, sortByZ, structuresToLoad, summation, supported_draw_methods, timeIt,
+  var ATOM_SIZE, Atom, Bond, CanvasContext, Chain, DEBUG, Element, Residue, Selector, Structure, addNewStructure, arrayToRGB, atomAtomDistance, atom_colors, boundMouseMotion, coffeemol, deepCopy, defaultInfo, degToRad, delay, encodeHTML, fromSplashLink, genIFSLink, hexToRGBArray, isBonded, mousePosition, nuc_acids, pdbAtomToDict, radToDeg, randomDrawMethod, randomInt, randomRGB, selector_delimiter, sortBondsByZ, sortByZ, summation, supported_draw_methods, timeIt, tol,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __indexOf = Array.prototype.indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; },
     __hasProp = Object.prototype.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
 
-  selector_delimiter = "/";
-
-  Selector = (function() {
-
-    function Selector(s) {
-      if (s == null) s = null;
-      this.up = __bind(this.up, this);
-      this.down = __bind(this.down, this);
-      this.left = __bind(this.left, this);
-      this.right = __bind(this.right, this);
-      if (!s) {
-        this.str = "0";
-        this.array = [0];
-      } else if (s instanceof Array) {
-        this.str = s.join(selector_delimiter);
-        this.array = s;
-      } else if (typeof s === "string") {
-        this.str = s;
-        this.array = this.str.split(selector_delimiter);
-      }
-    }
-
-    Selector.prototype.right = function() {
-      var aNext;
-      aNext = this.array;
-      aNext[aNext.length - 1] = aNext[aNext.length - 1] + 1;
-      return new Selector(aNext.join(selector_delimiter));
-    };
-
-    Selector.prototype.left = function() {
-      var aNext;
-      aNext = this.array;
-      aNext[aNext.length - 1] = aNext[aNext.length - 1] - 1;
-      return new Selector(aNext.join(selector_delimiter));
-    };
-
-    Selector.prototype.down = function() {
-      var aNext;
-      aNext = this.array;
-      aNext.push(0);
-      return new Selector(aNext.join(selector_delimiter));
-    };
-
-    Selector.prototype.up = function() {
-      var aNext, n;
-      aNext = this.array.slice(0, (this.array.length - 2) + 1 || 9e9);
-      n = new Selector(aNext.join(selector_delimiter));
-      if (n.str === this.str) {
-        return null;
-      } else {
-        return n;
-      }
-    };
-
-    return Selector;
-
-  })();
-
   CanvasContext = (function() {
 
-    function CanvasContext(canvas_tag) {
-      var _this = this;
+    function CanvasContext(canvas_tag, background_color) {
       this.canvas_tag = canvas_tag;
-      this.timedRotation = __bind(this.timedRotation, this);
-      this.findBonds = __bind(this.findBonds, this);
+      this.background_color = background_color != null ? background_color : "#ffffff";
       this.changeInfoFromSelectors = __bind(this.changeInfoFromSelectors, this);
       this.childFromSelector = __bind(this.childFromSelector, this);
       this.handleSelectorArg = __bind(this.handleSelectorArg, this);
-      this.avgCenterOfAllElements = __bind(this.avgCenterOfAllElements, this);
-      this.writeContextInfo = __bind(this.writeContextInfo, this);
-      this.translateOrigin = __bind(this.translateOrigin, this);
-      this.restoreToOriginal = __bind(this.restoreToOriginal, this);
-      this.mousemove = __bind(this.mousemove, this);
-      this.mouseup = __bind(this.mouseup, this);
-      this.changeZoom = __bind(this.changeZoom, this);
-      this.mousedown = __bind(this.mousedown, this);
-      this.clear = __bind(this.clear, this);
-      this.changeAllDrawMethods = __bind(this.changeAllDrawMethods, this);
-      this.drawAll = __bind(this.drawAll, this);
-      this.drawGridLines = __bind(this.drawGridLines, this);
-      this.findBestZoom = __bind(this.findBestZoom, this);
       this.assignSelectors = __bind(this.assignSelectors, this);
       this.showAtomInfo = __bind(this.showAtomInfo, this);
       this.determinePointGrid = __bind(this.determinePointGrid, this);
-      this.init = __bind(this.init, this);
+      this.timedRotation = __bind(this.timedRotation, this);
+      this.avgCenterOfAllElements = __bind(this.avgCenterOfAllElements, this);
+      this.translateOrigin = __bind(this.translateOrigin, this);
+      this.findBonds = __bind(this.findBonds, this);
+      this.restoreToOriginal = __bind(this.restoreToOriginal, this);
+      this.changeZoom = __bind(this.changeZoom, this);
+      this.iOSChangeZoom = __bind(this.iOSChangeZoom, this);
+      this.mousemove = __bind(this.mousemove, this);
+      this.touchmove = __bind(this.touchmove, this);
+      this.touchend = __bind(this.touchend, this);
+      this.mouseup = __bind(this.mouseup, this);
+      this.mousedown = __bind(this.mousedown, this);
+      this.touchstart = __bind(this.touchstart, this);
+      this.clear = __bind(this.clear, this);
       this.resizeToWindow = __bind(this.resizeToWindow, this);
+      this.changeAllDrawMethods = __bind(this.changeAllDrawMethods, this);
+      this.drawGridLines = __bind(this.drawGridLines, this);
+      this.findBestZoom = __bind(this.findBestZoom, this);
+      this.drawAll = __bind(this.drawAll, this);
+      this.loadFromDict = __bind(this.loadFromDict, this);
+      this.addNewStructure = __bind(this.addNewStructure, this);
+      this.init = __bind(this.init, this);
       this.elements = [];
       try {
         this.canvas = $(this.canvas_tag)[0];
@@ -98,130 +45,116 @@
       } catch (error) {
         alert(error);
       }
-      if ($("#debug-info").length) {
-        this.resizeToWindow();
-        $(window).resize(function() {
-          _this.resizeToWindow();
-          return _this.drawAll();
-        });
-      }
-      this.background_color = [255, 255, 255];
       $(this.canvas).css({
         "user-select": "none",
         "-moz-user-select": "none",
-        "-webkit-user-select": "none"
+        "-webkit-user-select": "none",
+        "background-color": arrayToRGB(this.background_color)
       });
+      this.mouse_x_prev = 0;
+      this.mouse_y_prev = 0;
+      $("#reset").on("click", this.restoreToOriginal);
+      this.canvas.addEventListener('mousedown', this.mousedown);
+      this.canvas.addEventListener('touchstart', this.touchstart);
+      this.canvas.addEventListener('DOMMouseScroll', this.changeZoom);
+      this.canvas.addEventListener('mousewheel', this.changeZoom);
+      this.canvas.addEventListener('gesturestart', this.iOSChangeZoom);
+      this.canvas.addEventListener('dblclick', this.translateOrigin);
+      this.canvas.addEventListener('mousemove', this.showAtomInfo);
     }
-
-    CanvasContext.prototype.resizeToWindow = function() {
-      this.canvas.width = window.innerWidth;
-      return this.canvas.height = window.innerHeight;
-    };
 
     CanvasContext.prototype.init = function() {
       var el, _i, _len, _ref;
-      this.mouse_x_prev = 0;
-      this.mouse_y_prev = 0;
       _ref = this.elements;
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         el = _ref[_i];
         el.init();
       }
-      $("#reset").on("click", this.restoreToOriginal);
-      this.canvas.addEventListener('mousedown', this.mousedown);
-      this.canvas.addEventListener('DOMMouseScroll', this.changeZoom);
-      this.canvas.addEventListener('mousewheel', this.changeZoom);
-      this.canvas.addEventListener('dblclick', this.translateOrigin);
       this.findBonds();
       this.assignSelectors();
-      if ($("#debug-info").length) {
-        this.canvas.addEventListener('mousemove', this.showAtomInfo);
-        this.determinePointGrid();
-      }
-      return this.restoreToOriginal();
+      this.restoreToOriginal();
+      return this.determinePointGrid();
     };
 
-    CanvasContext.prototype.determinePointGrid = function() {
-      var a, dx, el, h, i, j, w, _i, _j, _len, _len2, _ref, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _ref8;
-      this.grid = {};
-      for (w = _ref = -this.x_origin, _ref2 = this.canvas.width - this.x_origin; _ref <= _ref2 ? w <= _ref2 : w >= _ref2; _ref <= _ref2 ? w++ : w--) {
-        this.grid[w] = {};
-        for (h = _ref3 = -this.y_origin, _ref4 = this.canvas.height - this.y_origin; _ref3 <= _ref4 ? h <= _ref4 : h >= _ref4; _ref3 <= _ref4 ? h++ : h--) {
-          this.grid[w][h] = null;
-        }
-      }
-      _ref5 = this.elements;
-      for (_i = 0, _len = _ref5.length; _i < _len; _i++) {
-        el = _ref5[_i];
-        _ref6 = el.atoms;
-        for (_j = 0, _len2 = _ref6.length; _j < _len2; _j++) {
-          a = _ref6[_j];
-          w = parseInt(a.x);
-          h = parseInt(a.y);
-          dx = parseInt(ATOM_SIZE / this.zoom);
-          for (i = _ref7 = -1 * dx; _ref7 <= dx ? i <= dx : i >= dx; _ref7 <= dx ? i++ : i--) {
-            for (j = _ref8 = -1 * dx; _ref8 <= dx ? j <= dx : j >= dx; _ref8 <= dx ? j++ : j--) {
-              try {
-                if (!(this.grid[w + i][h + j] != null) || a.z > this.grid[w + i][h + j].z) {
-                  this.grid[w + i][h + j] = a;
-                }
-              } catch (error) {
-                1;
-              }
-            }
+    CanvasContext.prototype.addElement = function(el) {
+      return this.elements.push(el);
+    };
+
+    CanvasContext.prototype.addNewStructure = function(filepath, info) {
+      var handlePDB,
+        _this = this;
+      if (info == null) info = null;
+      handlePDB = function(data) {
+        var a, a_str, c, chain_id_prev, d, r, resi_id_prev, s, _i, _len, _ref;
+        s = new Structure(null, filepath, _this);
+        _ref = data.split('\n');
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          a_str = _ref[_i];
+          if (a_str.startswith("TITLE")) s.attachTitle(a_str);
+          if (!a_str.startswith("ATOM")) continue;
+          d = pdbAtomToDict(a_str);
+          if (!(typeof chain_id_prev !== "undefined" && chain_id_prev !== null) || d.chain_id !== chain_id_prev) {
+            c = new Chain(s, d.chain_id);
           }
+          if (!(typeof resi_id_prev !== "undefined" && resi_id_prev !== null) || d.resi_id !== resi_id_prev) {
+            r = new Residue(c, d.resi_name, d.resi_id);
+          }
+          a = new Atom(r, d.atom_name, _this, d.x, d.y, d.z, d.original_atom_name);
+          chain_id_prev = d.chain_id;
+          resi_id_prev = d.resi_id;
         }
-      }
+        if (info === null) info = defaultInfo();
+        s.propogateInfo(info);
+        if (_this.structures_left_to_load != null) {
+          _this.structures_left_to_load -= 1;
+          if (_this.structures_left_to_load === 0) {
+            console.log("first global init");
+            return _this.init();
+          }
+        } else {
+          return _this.init();
+        }
+      };
+      $.ajax({
+        async: true,
+        type: "GET",
+        url: filepath,
+        success: handlePDB
+      });
       return null;
     };
 
-    CanvasContext.prototype.showAtomInfo = function(e) {
-      var a, click, xx, yy, _ref;
-      if (this.a_prev != null) {
-        this.a_prev.info.drawColor = this.a_prev.info.prevDrawColor;
-        this.a_prev.info.borderColor = this.a_prev.info.prevBorderColor;
-        this.a_prev.drawPoint();
+    CanvasContext.prototype.loadFromDict = function(structuresToLoad) {
+      var filepath, info, _results;
+      this.structures_left_to_load = 0;
+      for (filepath in structuresToLoad) {
+        info = structuresToLoad[filepath];
+        this.structures_left_to_load += 1;
       }
-      click = mousePosition(e);
-      xx = parseInt((click.x - this.x_origin) / this.zoom);
-      yy = parseInt((click.y - this.y_origin) / this.zoom);
-      if ((this.grid[xx] != null) && (this.grid[xx][yy] != null)) {
-        a = this.grid[xx][yy];
-        if ((_ref = a.info.drawMethod) === 'lines' || _ref === 'cartoon') {
-          return null;
-        }
-        a.info.prevDrawColor = a.info.drawColor;
-        a.info.prevBorderColor = a.info.prevBorderColor;
-        a.info.drawColor = [0, 255, 0];
-        a.info.borderColor = [0, 0, 255];
-        a.drawPoint();
-        this.a_prev = a;
-        $("#atom-info").html(a.atomInfo());
+      _results = [];
+      for (filepath in structuresToLoad) {
+        info = structuresToLoad[filepath];
+        _results.push(this.addNewStructure(filepath, info));
       }
-      return null;
+      return _results;
     };
 
-    CanvasContext.prototype.assignSelectors = function() {
-      var a, c, el, na, nc, ne, nr, r, _len, _len2, _len3, _len4, _ref, _ref2, _ref3, _ref4;
+    CanvasContext.prototype.drawAll = function(DEBUG) {
+      var el, sortByAvgZ, _i, _len, _ref;
+      if (DEBUG == null) DEBUG = false;
+      this.drawGridLines();
+      this.context.scale(this.zoom, this.zoom);
+      sortByAvgZ = function(e1, e2) {
+        var c1, c2;
+        c1 = e1.avgCenter();
+        c2 = e2.avgCenter();
+        return c1[2] - c2[2];
+      };
+      this.elements.sort(sortByAvgZ);
       _ref = this.elements;
-      for (ne = 0, _len = _ref.length; ne < _len; ne++) {
-        el = _ref[ne];
-        el.selector = new Selector([ne]);
-        _ref2 = el.children;
-        for (nc = 0, _len2 = _ref2.length; nc < _len2; nc++) {
-          c = _ref2[nc];
-          c.selector = new Selector([ne, nc]);
-          _ref3 = c.children;
-          for (nr = 0, _len3 = _ref3.length; nr < _len3; nr++) {
-            r = _ref3[nr];
-            r.selector = new Selector([ne, nc, nr]);
-            _ref4 = r.children;
-            for (na = 0, _len4 = _ref4.length; na < _len4; na++) {
-              a = _ref4[na];
-              a.selector = new Selector([ne, nc, nr, na]);
-            }
-          }
-        }
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        el = _ref[_i];
+        el.draw();
       }
       return null;
     };
@@ -256,30 +189,6 @@
       return this.context.stroke();
     };
 
-    CanvasContext.prototype.addElement = function(el) {
-      return this.elements.push(el);
-    };
-
-    CanvasContext.prototype.drawAll = function(DEBUG) {
-      var el, sortByAvgZ, _i, _len, _ref;
-      if (DEBUG == null) DEBUG = false;
-      this.drawGridLines();
-      this.context.scale(this.zoom, this.zoom);
-      sortByAvgZ = function(e1, e2) {
-        var c1, c2;
-        c1 = e1.avgCenter();
-        c2 = e2.avgCenter();
-        return c1[2] - c2[2];
-      };
-      this.elements.sort(sortByAvgZ);
-      _ref = this.elements;
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        el = _ref[_i];
-        el.draw();
-      }
-      return null;
-    };
-
     CanvasContext.prototype.changeAllDrawMethods = function(new_method) {
       var el, _i, _len, _ref;
       this.clear();
@@ -291,9 +200,21 @@
       return this.drawAll();
     };
 
+    CanvasContext.prototype.resizeToWindow = function() {
+      this.canvas.width = window.innerWidth;
+      return this.canvas.height = window.innerHeight;
+    };
+
     CanvasContext.prototype.clear = function() {
       this.canvas.width = this.canvas.width;
       return this.context.translate(this.x_origin, this.y_origin);
+    };
+
+    CanvasContext.prototype.touchstart = function(mobile_e) {
+      mobile_e.preventDefault();
+      this.canvas.addEventListener('touchmove', this.touchmove);
+      this.canvas.addEventListener('touchend', this.touchend);
+      return this.mousedown(mobile_e.touches[0]);
     };
 
     CanvasContext.prototype.mousedown = function(e) {
@@ -303,6 +224,64 @@
       this.canvas.addEventListener('mousemove', this.mousemove);
       this.canvas.addEventListener('mouseout', this.mouseup);
       return this.canvas.addEventListener('mouseup', this.mouseup);
+    };
+
+    CanvasContext.prototype.mouseup = function(e) {
+      this.clear();
+      this.drawAll();
+      this.canvas.removeEventListener('mousemove', this.mousemove);
+      this.canvas.addEventListener('mousemove', this.showAtomInfo);
+      return this.determinePointGrid();
+    };
+
+    CanvasContext.prototype.touchend = function(mobile_e) {
+      this.canvas.removeEventListener('touchmove', this.mousemove);
+      return this.mouseup(mobile_e.touches[0]);
+    };
+
+    CanvasContext.prototype.touchmove = function(mobile_e) {
+      return this.mousemove(mobile_e.touches[0]);
+    };
+
+    CanvasContext.prototype.mousemove = function(e) {
+      var ds, dx, dy, el, fps, time_start, _i, _len, _ref;
+      dx = boundMouseMotion(this.mouse_x_prev - e.clientX);
+      dy = boundMouseMotion(this.mouse_y_prev - e.clientY);
+      ds = Math.sqrt(dx * dx + dy * dy);
+      time_start = new Date;
+      this.clear();
+      _ref = this.elements;
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        el = _ref[_i];
+        el.rotateAboutX(degToRad(dy));
+        el.rotateAboutY(degToRad(-dx));
+      }
+      this.drawAll();
+      fps = 1000 / (new Date - time_start);
+      this.mouse_x_prev = e.clientX;
+      return this.mouse_y_prev = e.clientY;
+    };
+
+    CanvasContext.prototype.iOSChangeZoom = function(gesture) {
+      var zoomChanger,
+        _this = this;
+      zoomChanger = function(gesture) {
+        var el, _i, _len, _ref;
+        gesture.preventDefault();
+        _this.zoom *= Math.sqrt(gesture.scale);
+        _ref = _this.elements;
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          el = _ref[_i];
+          el.rotateAboutZ(degToRad(boundMouseMotion(gesture.rotation)));
+        }
+        _this.clear();
+        if (_this.zoom > 0) {
+          _this.drawAll();
+          return _this.zoom_prev = _this.zoom;
+        }
+      };
+      zoomChanger(gesture);
+      return this.canvas.addEventListener('gesturechange', zoomChanger);
     };
 
     CanvasContext.prototype.changeZoom = function(e) {
@@ -319,47 +298,6 @@
       }
     };
 
-    CanvasContext.prototype.mouseup = function(e) {
-      this.canvas.removeEventListener('mousemove', this.mousemove);
-      this.canvas.addEventListener('mousemove', this.showAtomInfo);
-      return this.determinePointGrid();
-    };
-
-    CanvasContext.prototype.mousemove = function(e) {
-      var boundMouseMotion, ds, dx, dy, el, fps, low_fps_warning, time_start, tol, _i, _len, _ref;
-      tol = 2;
-      boundMouseMotion = function(dz) {
-        if (dz > tol) {
-          return tol;
-        } else if (dz < -1 * tol) {
-          return -1 * tol;
-        } else {
-          return dz;
-        }
-      };
-      dx = boundMouseMotion(this.mouse_x_prev - e.clientX);
-      dy = boundMouseMotion(this.mouse_y_prev - e.clientY);
-      ds = Math.sqrt(dx * dx + dy * dy);
-      time_start = new Date;
-      this.clear();
-      _ref = this.elements;
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        el = _ref[_i];
-        el.rotateAboutX(degToRad(dy));
-        el.rotateAboutY(degToRad(-dx));
-      }
-      this.drawAll();
-      fps = 1000 / (new Date - time_start);
-      if (fps < 15) {
-        low_fps_warning = '<p style="color: red;">It appears this molecule is too large to handle smoothly, consider using "C"/Cartoon mode, a faster computer, or upgrade your browser</p>';
-      } else {
-        low_fps_warning = "";
-      }
-      $("#debug-info").html("" + low_fps_warning + "FPS: " + (fps.toFixed(2)) + ", ds: " + (ds.toFixed(2)) + ",				dx: " + (dx.toFixed(2)) + ", dy: " + (dy.toFixed(2)));
-      this.mouse_x_prev = e.clientX;
-      return this.mouse_y_prev = e.clientY;
-    };
-
     CanvasContext.prototype.restoreToOriginal = function() {
       var center, el, _i, _len, _ref;
       center = this.avgCenterOfAllElements();
@@ -373,9 +311,19 @@
       this.zoom_prev = this.zoom;
       this.x_origin = this.canvas.width / 2;
       this.y_origin = this.canvas.height / 2;
-      if ($("#debug-info").length) this.x_origin += $(".cc-size").width() / 2;
       this.clear();
       return this.drawAll();
+    };
+
+    CanvasContext.prototype.findBonds = function() {
+      var el, _i, _len, _ref;
+      this.bonds = [];
+      _ref = this.elements;
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        el = _ref[_i];
+        el.findBonds();
+      }
+      return null;
     };
 
     CanvasContext.prototype.translateOrigin = function(e) {
@@ -385,37 +333,6 @@
       this.y_origin = click.y;
       this.clear();
       return this.drawAll();
-    };
-
-    CanvasContext.prototype.writeContextInfo = function() {
-      var htmlInfo,
-        _this = this;
-      htmlInfo = function(index, oldhtml) {
-        var el, el_info;
-        el_info = (function() {
-          var _i, _len, _ref, _results;
-          _ref = this.elements;
-          _results = [];
-          for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-            el = _ref[_i];
-            _results.push("<p>" + (el.writeContextInfo()) + "</p>");
-          }
-          return _results;
-        }).call(_this);
-        return el_info.join(" ");
-      };
-      $("#ctx-info").html(htmlInfo);
-      return $(".element-desc").on("click", function() {
-        var cc, shown;
-        cc = $(this).siblings().next();
-        cc = cc.add(cc.find(".element-desc"));
-        shown = cc.css("display");
-        if (shown === "none") {
-          return cc.fadeIn("fast");
-        } else {
-          return cc.fadeOut("fast");
-        }
-      });
     };
 
     CanvasContext.prototype.avgCenterOfAllElements = function() {
@@ -438,66 +355,6 @@
         _results.push(a / total_atoms);
       }
       return _results;
-    };
-
-    CanvasContext.prototype.handleSelectorArg = function(s) {
-      if (typeof s === "string") s = new Selector(s);
-      return s;
-    };
-
-    CanvasContext.prototype.childFromSelector = function(selector) {
-      var c, i, _i, _len, _ref;
-      selector = this.handleSelectorArg(selector);
-      c = this;
-      _ref = selector.array;
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        i = _ref[_i];
-        if (c.elements != null) {
-          c = c.elements[i];
-        } else {
-          c = c.children[i];
-        }
-      }
-      return c;
-    };
-
-    CanvasContext.prototype.changeInfoFromSelectors = function(selectors, info_key, info_value) {
-      var c, selector, _i, _len, _results;
-      if (!selectors instanceof Array || typeof selectors === 'string') {
-        selectors = [selectors];
-      }
-      _results = [];
-      for (_i = 0, _len = selectors.length; _i < _len; _i++) {
-        selector = selectors[_i];
-        selector = this.handleSelectorArg(selector);
-        try {
-          c = this.childFromSelector(selector);
-        } catch (error) {
-          alert("Child from selector " + selector.str + " does not exist");
-        }
-        try {
-          c.info[info_key] = info_value.toLowerCase();
-        } catch (error) {
-          alert("Error: " + error + " with " + info_key + " to " + info_value);
-        }
-        c.propogateInfo(c.info);
-        this.clear();
-        if (c.info.drawMethod !== 'points') this.findBonds();
-        this.drawAll();
-        _results.push(null);
-      }
-      return _results;
-    };
-
-    CanvasContext.prototype.findBonds = function() {
-      var el, _i, _len, _ref;
-      this.bonds = [];
-      _ref = this.elements;
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        el = _ref[_i];
-        el.findBonds();
-      }
-      return null;
     };
 
     CanvasContext.prototype.timedRotation = function(dim, dt) {
@@ -532,9 +389,164 @@
       return clearInterval(this.delayID);
     };
 
+    CanvasContext.prototype.determinePointGrid = function() {
+      var a, dx, el, h, i, j, w, _i, _j, _len, _len2, _ref, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _ref8;
+      this.grid = {};
+      for (w = _ref = -this.x_origin, _ref2 = this.canvas.width - this.x_origin; _ref <= _ref2 ? w <= _ref2 : w >= _ref2; _ref <= _ref2 ? w++ : w--) {
+        this.grid[w] = {};
+        for (h = _ref3 = -this.y_origin, _ref4 = this.canvas.height - this.y_origin; _ref3 <= _ref4 ? h <= _ref4 : h >= _ref4; _ref3 <= _ref4 ? h++ : h--) {
+          this.grid[w][h] = null;
+        }
+      }
+      dx = parseInt(ATOM_SIZE / this.zoom);
+      console.log(dx);
+      _ref5 = this.elements;
+      for (_i = 0, _len = _ref5.length; _i < _len; _i++) {
+        el = _ref5[_i];
+        _ref6 = el.atoms;
+        for (_j = 0, _len2 = _ref6.length; _j < _len2; _j++) {
+          a = _ref6[_j];
+          w = parseInt(a.x);
+          h = parseInt(a.y);
+          for (i = _ref7 = -1 * dx; _ref7 <= dx ? i <= dx : i >= dx; _ref7 <= dx ? i++ : i--) {
+            for (j = _ref8 = -1 * dx; _ref8 <= dx ? j <= dx : j >= dx; _ref8 <= dx ? j++ : j--) {
+              try {
+                if (!(this.grid[w + i][h + j] != null) || a.z > this.grid[w + i][h + j].z) {
+                  this.grid[w + i][h + j] = a;
+                }
+              } catch (error) {
+                1;
+              }
+            }
+          }
+        }
+      }
+      return null;
+    };
+
+    CanvasContext.prototype.showAtomInfo = function(e) {
+      var a, aib, click, grid_x, grid_y, _ref;
+      if (this.a_prev != null) {
+        this.a_prev.info.drawColor = this.a_prev.info.prevDrawColor;
+        this.a_prev.info.borderColor = this.a_prev.info.prevBorderColor;
+        this.a_prev.drawPoint();
+      }
+      click = mousePosition(e);
+      grid_x = parseInt((click.x - this.x_origin) / this.zoom);
+      grid_y = parseInt((click.y - this.y_origin) / this.zoom);
+      if ((this.grid[grid_x] != null) && (this.grid[grid_x][grid_y] != null)) {
+        a = this.grid[grid_x][grid_y];
+        if ((_ref = a.info.drawMethod) === 'lines' || _ref === 'cartoon') {
+          return null;
+        }
+        a.info.prevDrawColor = a.info.drawColor;
+        a.info.prevBorderColor = a.info.prevBorderColor;
+        a.info.drawColor = [0, 255, 0];
+        a.info.borderColor = [0, 0, 255];
+        a.drawPoint();
+        if (false && (this.a_prev != null) && this.a_prev !== a) {
+          aib = $("#atom-info-box");
+          if (aib.length > 0) aib.remove();
+        }
+        this.a_prev = a;
+      }
+      return null;
+    };
+
+    CanvasContext.prototype.assignSelectors = function() {
+      var a, c, el, na, nc, ne, nr, r, _len, _len2, _len3, _len4, _ref, _ref2, _ref3, _ref4;
+      _ref = this.elements;
+      for (ne = 0, _len = _ref.length; ne < _len; ne++) {
+        el = _ref[ne];
+        el.selector = new Selector([ne]);
+        _ref2 = el.children;
+        for (nc = 0, _len2 = _ref2.length; nc < _len2; nc++) {
+          c = _ref2[nc];
+          c.selector = new Selector([ne, nc]);
+          _ref3 = c.children;
+          for (nr = 0, _len3 = _ref3.length; nr < _len3; nr++) {
+            r = _ref3[nr];
+            r.selector = new Selector([ne, nc, nr]);
+            _ref4 = r.children;
+            for (na = 0, _len4 = _ref4.length; na < _len4; na++) {
+              a = _ref4[na];
+              a.selector = new Selector([ne, nc, nr, na]);
+            }
+          }
+        }
+      }
+      return null;
+    };
+
+    CanvasContext.prototype.handleSelectorArg = function(s) {
+      if (typeof s === "string") s = new Selector(s);
+      return s;
+    };
+
+    CanvasContext.prototype.childFromSelector = function(selector) {
+      var c, i, _i, _len, _ref;
+      selector = this.handleSelectorArg(selector);
+      c = this;
+      _ref = selector.array;
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        i = _ref[_i];
+        c = c.elements != null ? c.elements[i] : c = c.children[i];
+      }
+      return c;
+    };
+
+    CanvasContext.prototype.changeInfoFromSelectors = function(selectors, info_key, info_value) {
+      var c, el, selector, _i, _len;
+      if (selectors === "all") {
+        selectors = (function() {
+          var _i, _len, _ref, _results;
+          _ref = this.elements;
+          _results = [];
+          for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+            el = _ref[_i];
+            _results.push(el.selector);
+          }
+          return _results;
+        }).call(this);
+      } else if (!selectors instanceof Array || typeof selectors === 'string') {
+        selectors = [selectors];
+      }
+      for (_i = 0, _len = selectors.length; _i < _len; _i++) {
+        selector = selectors[_i];
+        selector = this.handleSelectorArg(selector);
+        try {
+          c = this.childFromSelector(selector);
+        } catch (error) {
+          alert("Child from selector " + selector.str + " does not exist");
+        }
+        try {
+          c.info[info_key] = info_value.toLowerCase();
+        } catch (error) {
+          alert("Error: " + error + " with " + info_key + " to " + info_value);
+        }
+        c.propogateInfo(c.info);
+      }
+      this.clear();
+      if (c.info.drawMethod !== 'points') this.findBonds();
+      this.drawAll();
+      return null;
+    };
+
     return CanvasContext;
 
   })();
+
+  tol = 2;
+
+  boundMouseMotion = function(dz) {
+    if (dz > tol) {
+      return tol;
+    } else if (dz < -1 * tol) {
+      return -1 * tol;
+    } else {
+      return dz;
+    }
+  };
 
   Element = (function() {
 
@@ -546,6 +558,7 @@
       this.translateTo = __bind(this.translateTo, this);
       this.avgCenter = __bind(this.avgCenter, this);
       this.restoreToOriginal = __bind(this.restoreToOriginal, this);
+      this.rotateAboutXYZ = __bind(this.rotateAboutXYZ, this);
       this.rotateAboutX = __bind(this.rotateAboutX, this);
       this.rotateAboutY = __bind(this.rotateAboutY, this);
       this.rotateAboutZ = __bind(this.rotateAboutZ, this);
@@ -607,7 +620,7 @@
 
     Element.prototype.propogateInfo = function(info) {
       var c, _i, _len, _ref;
-      this.info = $.extend(true, {}, info);
+      this.info = deepCopy(info);
       if (this.info.drawColor != null) {
         this.info.drawColor = hexToRGBArray(this.info.drawColor);
       } else {
@@ -624,6 +637,30 @@
         c.propogateInfo(info);
       }
       return null;
+    };
+
+    Element.prototype.stashInfo = function() {
+      var c, _i, _len, _ref, _results;
+      this.old_info = deepCopy(this.info);
+      _ref = this.children;
+      _results = [];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        c = _ref[_i];
+        _results.push(c.stashInfo());
+      }
+      return _results;
+    };
+
+    Element.prototype.retrieveStashedInfo = function() {
+      var c, _i, _len, _ref, _results;
+      this.info = deepCopy(this.old_info);
+      _ref = this.children;
+      _results = [];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        c = _ref[_i];
+        _results.push(c.retrieveStashedInfo());
+      }
+      return _results;
     };
 
     Element.prototype.getOfType = function(type) {
@@ -662,8 +699,7 @@
       _ref = this.bonds;
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         b = _ref[_i];
-        if (!(b.a1.info.drawMethod !== 'points')) continue;
-        "@cc.context.beginPath()\n@cc.context.moveTo b.a1.x, b.a1.y\n@cc.context.lineTo b.a2.x, b.a2.y\n@cc.context.strokeStyle = arrayToRGB [10,10,10] \n@cc.context.lineWidth = .1/@cc.zoom+2/@cc.zoom\n@cc.context.closePath()\n@cc.context.stroke()";
+        if (b.a1.info.drawMethod !== 'points') continue;
         this.cc.context.beginPath();
         this.cc.context.moveTo(b.a1.x, b.a1.y);
         this.cc.context.lineTo(b.a2.x, b.a2.y);
@@ -747,6 +783,16 @@
       return null;
     };
 
+    Element.prototype.rotateAboutXYZ = function(dx, dy, dz) {
+      var a, _i, _len, _ref;
+      _ref = this.atoms;
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        a = _ref[_i];
+        a.rotateAboutXYZ(dx, dy, dz);
+      }
+      return null;
+    };
+
     Element.prototype.restoreToOriginal = function() {
       var a, _i, _len, _ref;
       _ref = this.atoms;
@@ -793,7 +839,7 @@
       _results = [];
       for (i = 2, _ref = this.atoms.length - 1; 2 <= _ref ? i <= _ref : i >= _ref; 2 <= _ref ? i++ : i--) {
         a1 = this.atoms[i];
-        j_step = a1.info.drawMethod === 'cartoon' ? 30 : 5;
+        j_step = a1.info.drawMethod === 'cartoon' ? 30 : 10;
         _results.push((function() {
           var _ref2, _ref3, _results2;
           _results2 = [];
@@ -914,7 +960,7 @@
 
     __extends(Atom, _super);
 
-    function Atom(parent, name, x, y, z, original_atom_name) {
+    function Atom(parent, name, cc, x, y, z, original_atom_name) {
       this.x = x;
       this.y = y;
       this.z = z;
@@ -922,12 +968,13 @@
       this.atomInfo = __bind(this.atomInfo, this);
       this.asArray = __bind(this.asArray, this);
       this.restoreToOriginal = __bind(this.restoreToOriginal, this);
+      this.rotateAboutXYZ = __bind(this.rotateAboutXYZ, this);
       this.rotateAboutZ = __bind(this.rotateAboutZ, this);
       this.rotateAboutX = __bind(this.rotateAboutX, this);
       this.rotateAboutY = __bind(this.rotateAboutY, this);
       this.drawPoint = __bind(this.drawPoint, this);
       this.toString = __bind(this.toString, this);
-      Atom.__super__.constructor.call(this, parent, name);
+      Atom.__super__.constructor.call(this, parent, name, cc);
       this.original_position = [this.x, this.y, this.z];
     }
 
@@ -937,11 +984,7 @@
 
     Atom.prototype.drawPoint = function() {
       var c, color, zz;
-      if (!(this.info.drawColor != null)) {
-        color = atom_colors[this.name];
-      } else {
-        color = this.info.drawColor;
-      }
+      color = !(this.info.drawColor != null) ? atom_colors[this.name] : this.info.drawColor;
       this.cc.context.beginPath();
       zz = ATOM_SIZE / this.cc.zoom;
       this.cc.context.arc(this.x, this.y, zz, 0, 2 * Math.PI, false);
@@ -975,6 +1018,12 @@
       return this.y = this.x * sin + this.y * cos;
     };
 
+    Atom.prototype.rotateAboutXYZ = function(j, k, l) {
+      this.x = this.x * Math.cos(k) * Math.cos(l) + this.z * Math.sin(k) - this.y * Math.cos(k) * Math.sin(l);
+      this.y = -this.z * Math.cos(k) * Math.sin(j) + this.x * (Math.cos(l) * Math.sin(j) * Math.sin(k) + Math.cos(j) * Math.sin(l)) + this.y * (Math.cos(j) * Math.cos(l) - Math.sin(j) * Math.sin(k) * Math.sin(l));
+      return this.z = this.z * Math.cos(j) * Math.cos(k) + this.x * (-Math.cos(j) * Math.cos(l) * Math.sin(k) + Math.sin(j) * Math.sin(l)) + this.y * (Math.cos(l) * Math.sin(j) + Math.cos(j) * Math.sin(k) * Math.sin(l));
+    };
+
     Atom.prototype.restoreToOriginal = function() {
       this.x = this.original_position[0];
       this.y = this.original_position[1];
@@ -997,23 +1046,44 @@
           parents.push(this.cc.childFromSelector(s));
         }
       }
-      return ((function() {
-        var _i, _len, _results;
-        _results = [];
-        for (_i = 0, _len = parents.length; _i < _len; _i++) {
-          p = parents[_i];
-          _results.push(encodeHTML(p.toString()));
-        }
-        return _results;
-      })()).join("<br>");
+      try {
+        return ((function() {
+          var _i, _len, _results;
+          _results = [];
+          for (_i = 0, _len = parents.length; _i < _len; _i++) {
+            p = parents[_i];
+            _results.push(encodeHTML(p.toString()));
+          }
+          return _results;
+        })()).join("<br>");
+      } catch (error) {
+        return console.log(parents);
+      }
     };
 
     return Atom;
 
   })(Element);
 
+  atom_colors = {
+    'C': [51, 255, 51],
+    'O': [255, 76, 76],
+    'N': [51, 51, 255],
+    'P': [255, 128, 0],
+    'H': [229, 229, 229],
+    'S': [229, 198, 64]
+  };
+
   sortBondsByZ = function(b1, b2) {
-    return b1.a2.z - b2.a2.z;
+    return b1.zCenter() - b2.zCenter();
+  };
+
+  sortByZ = function(a1, a2) {
+    return a1.z - a2.z;
+  };
+
+  atomAtomDistance = function(a1, a2) {
+    return Math.sqrt((a1.x - a2.x) * (a1.x - a2.x) + (a1.y - a2.y) * (a1.y - a2.y) + (a1.z - a2.z) * (a1.z - a2.z));
   };
 
   Bond = (function() {
@@ -1021,6 +1091,7 @@
     function Bond(a1, a2) {
       this.a1 = a1;
       this.a2 = a2;
+      this.zCenter = __bind(this.zCenter, this);
       this.computeLength = __bind(this.computeLength, this);
       this.toString = __bind(this.toString, this);
       this.computeLength();
@@ -1031,96 +1102,78 @@
     };
 
     Bond.prototype.computeLength = function() {
-      return this.length = atomAtomDistance(this.a1, this.a2);
+      if (this.length != null) {
+        return this.length;
+      } else {
+        return this.length = atomAtomDistance(this.a1, this.a2);
+      }
+    };
+
+    Bond.prototype.zCenter = function() {
+      return (this.a1.z + this.a2.z) / 2.0;
     };
 
     return Bond;
 
   })();
 
-  if ($("#debug-info").length) {
-    $("#add-new-structure .submit").on('click', addNewStructure);
-    fitCtxInfo = function() {
-      var c, top, w_height;
-      c = $("#ctx-info");
-      top = c.offset().top;
-      w_height = $(window).height();
-      return c.height(w_height - top - 100);
-    };
-    fitCtxInfo();
-    $(window).resize(fitCtxInfo);
-    fade = "out";
-    $("#show-ctx-container").on("click", function() {
-      if (fade === "in") {
-        return $(".cc-size").fadeIn("fast", function() {
-          fade = "out";
-          return $("#show-ctx-container").html("<< Options");
-        });
-      } else if (fade === "out") {
-        return $(".cc-size").fadeOut("fast", function() {
-          fade = "in";
-          return $("#show-ctx-container").html("Options >>");
-        });
+  selector_delimiter = "/";
+
+  Selector = (function() {
+
+    function Selector(s) {
+      if (s == null) s = null;
+      this.up = __bind(this.up, this);
+      this.down = __bind(this.down, this);
+      this.left = __bind(this.left, this);
+      this.right = __bind(this.right, this);
+      if (!s) {
+        this.str = "0";
+        this.array = [0];
+      } else if (s instanceof Array) {
+        this.str = s.join(selector_delimiter);
+        this.array = s;
+      } else if (typeof s === "string") {
+        this.str = s;
+        this.array = this.str.split(selector_delimiter);
       }
-    });
-    $("#help-area").on("click", function() {
-      return $(this).css("display", "none");
-    });
-    structuresToLoad = {
-      "PDBs/A1_open_2HU_78bp_1/out-1-16.pdb": {
-        drawMethod: "cartoon",
-        drawColor: [47, 254, 254]
-      },
-      "PDBs/A1_open_2HU_78bp_1/half1_0.pdb": {
-        drawMethod: "cartoon",
-        drawColor: [254, 0, 254]
-      },
-      "PDBs/A1_open_2HU_78bp_1/half2-78bp-ID0_B1-16.pdb": {
-        drawMethod: "cartoon",
-        drawColor: [254, 0, 254]
-      },
-      "PDBs/A1_open_2HU_78bp_1/proteins-78bp-ID0_B1-16.pdb": {
-        drawMethod: "cartoon",
-        drawColor: [251, 251, 1]
-      }
-    };
-    "structuresToLoad =\n	\"PDBs/half1_0.pdb\":\n		drawMethod: \"cartoon\"\n\nstructuresToLoad =\n	\"http://www.rcsb.org/pdb/files/1MMS.pdb\":\n		drawMethod: \"both\"\n		#drawColor: [47, 254, 254]";
-    dismissWelcomeSplash = function() {
-      $("#show-ctx-container").css("display", "block");
-      $(".cc-size").css("display", "block");
-      return $("#welcome-splash").fadeOut("fast");
-    };
-    if (!(structuresToLoad != null)) {
-      $("#show-ctx-container").css("display", "none");
-      $(".cc-size").css("display", "none");
-      $("#welcome-splash").css({
-        left: $(window).width() / 2 - $("#welcome-splash").outerWidth() / 2,
-        top: $(window).height() / 2 - $("#welcome-splash").outerHeight() / 2
-      });
-      $("#welcome-splash").fadeIn("fast", function() {
-        $("#show-ctx-container").fadeIn("fast");
-        $(".sample-pdb-link").on("click", dismissWelcomeSplash);
-        return $("#welcome-splash #dismiss").on("click", dismissWelcomeSplash);
-      });
-    } else {
-      loadFromDict(structuresToLoad);
     }
-    ctx.init();
-    ctx.writeContextInfo();
-    $(".open-dropdown").on("click", function(e) {
-      var d;
-      d = $(this).next();
-      if ((d.filter(":hidden")).length === 1) {
-        d.css({
-          'top': e.pageY,
-          'left': e.pageX
-        });
-        return d.fadeIn("fast");
+
+    Selector.prototype.right = function() {
+      var aNext;
+      aNext = this.array;
+      aNext[aNext.length - 1] = aNext[aNext.length - 1] + 1;
+      return new Selector(aNext.join(selector_delimiter));
+    };
+
+    Selector.prototype.left = function() {
+      var aNext;
+      aNext = this.array;
+      aNext[aNext.length - 1] = aNext[aNext.length - 1] - 1;
+      return new Selector(aNext.join(selector_delimiter));
+    };
+
+    Selector.prototype.down = function() {
+      var aNext;
+      aNext = this.array;
+      aNext.push(0);
+      return new Selector(aNext.join(selector_delimiter));
+    };
+
+    Selector.prototype.up = function() {
+      var aNext, n;
+      aNext = this.array.slice(0, (this.array.length - 2) + 1 || 9e9);
+      n = new Selector(aNext.join(selector_delimiter));
+      if (n.str === this.str) {
+        return null;
       } else {
-        return d.fadeOut("fast");
+        return n;
       }
-    });
-  }
+    };
+
+    return Selector;
+
+  })();
 
   ATOM_SIZE = 3;
 
@@ -1160,15 +1213,6 @@
   }
 
   nuc_acids = ["A", "C", "G", "T", "DA", "DC", "DG", "DT", "RA", "RC", "RG", "RT"];
-
-  atom_colors = {
-    'C': [51, 255, 51],
-    'O': [255, 76, 76],
-    'N': [51, 51, 255],
-    'P': [255, 128, 0],
-    'H': [229, 229, 229],
-    'S': [229, 198, 64]
-  };
 
   supported_draw_methods = ["both", "lines", "points", "cartoon"];
 
@@ -1216,11 +1260,10 @@
   arrayToRGB = function(a) {
     var fixer, x;
     if (typeof a === 'string') {
-      if (a.startswith("#" && a.length === 7)) {
-        console.log("hex");
+      if (a.startswith("#")) {
         return a;
       } else {
-        alert("Improperly formatted string -> color. Must be of the form #XXXXXX");
+        alert("Improperly formatted string -> color. \					Must be of the form #XXXXXX");
       }
     }
     if (!(a != null)) {
@@ -1278,12 +1321,8 @@
     return rad * 57.2957795;
   };
 
-  sortByZ = function(a1, a2) {
-    return a1.z - a2.z;
-  };
-
-  atomAtomDistance = function(a1, a2) {
-    return Math.sqrt((a1.x - a2.x) * (a1.x - a2.x) + (a1.y - a2.y) * (a1.y - a2.y) + (a1.z - a2.z) * (a1.z - a2.z));
+  delay = function(ms, f) {
+    return setInterval(f, ms);
   };
 
   pdbAtomToDict = function(a_str) {
@@ -1322,6 +1361,10 @@
     return [rr(), rr(), rr()];
   };
 
+  deepCopy = function(o) {
+    return $.extend(true, {}, o);
+  };
+
   randomDrawMethod = function() {
     return supported_draw_methods[randomInt(supported_draw_methods.length)];
   };
@@ -1336,7 +1379,7 @@
 
   genIFSLink = function(selector_str, key, val, pretty) {
     var link;
-    link = "javascript:window.ctx.changeInfoFromSelectors('" + selector_str + "', 			'" + key + "', '" + val + "');";
+    link = "javascript:window.coffeemol.changeInfoFromSelectors('" + selector_str + "', 			'" + key + "', '" + val + "');";
     return "<div class='dropdown-option'><a href=\"" + link + "\">" + pretty + "</a></div>";
   };
 
@@ -1354,78 +1397,21 @@
     }
   };
 
-  loadPDBAsStructure = function(filepath, cc, info) {
-    if (info == null) info = null;
-    $.ajax({
-      async: false,
-      type: "GET",
-      url: filepath,
-      success: function(data) {
-        var a, a_str, c, chain_id_prev, d, r, resi_id_prev, s, _i, _len, _ref;
-        s = new Structure(null, filepath, cc);
-        _ref = data.split('\n');
-        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-          a_str = _ref[_i];
-          if (a_str.startswith("TITLE")) s.attachTitle(a_str);
-          if (!a_str.startswith("ATOM")) continue;
-          d = pdbAtomToDict(a_str);
-          if (!(typeof chain_id_prev !== "undefined" && chain_id_prev !== null) || d.chain_id !== chain_id_prev) {
-            c = new Chain(s, d.chain_id);
-          }
-          if (!(typeof resi_id_prev !== "undefined" && resi_id_prev !== null) || d.resi_id !== resi_id_prev) {
-            r = new Residue(c, d.resi_name, d.resi_id);
-          }
-          a = new Atom(r, d.atom_name, d.x, d.y, d.z, d.original_atom_name);
-          chain_id_prev = d.chain_id;
-          resi_id_prev = d.resi_id;
-        }
-        if (info === null) {
-          info = defaultInfo();
-          if (s.atoms.length > 100) info.drawMethod = 'cartoon';
-        }
-        return s.propogateInfo(info);
-      }
-    });
-    return null;
-  };
-
   addNewStructure = function(e) {
     var filepath;
     filepath = $("#add-new-structure .text").val();
-    loadPDBAsStructure(filepath, ctx);
-    ctx.init();
-    return ctx.writeContextInfo();
-  };
-
-  loadFromDict = function(structuresToLoad) {
-    var filepath, info, _results;
-    _results = [];
-    for (filepath in structuresToLoad) {
-      info = structuresToLoad[filepath];
-      _results.push(loadPDBAsStructure(filepath, ctx, info));
-    }
-    return _results;
+    return coffeemol.addNewStructure(filepath);
   };
 
   fromSplashLink = function(filename) {
-    loadPDBAsStructure(filename, window.ctx, {
+    return coffeemol.addNewStructure(filename, {
       drawMethod: 'cartoon'
     });
-    ctx.init();
-    return ctx.writeContextInfo();
   };
 
-  delay = function(ms, f) {
-    return setInterval(f, ms);
-  };
+  coffeemol = new CanvasContext("#coffeemolCanvas");
 
-  ctx = new CanvasContext("#coffeemolCanvas");
-
-  window.ctx = ctx;
-
-  window.loadFromDict = loadFromDict;
-
-  window.loadPDBAsStructure = loadPDBAsStructure;
+  window.coffeemol = coffeemol;
 
   window.fromSplashLink = fromSplashLink;
 
