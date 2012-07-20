@@ -1,0 +1,10 @@
+vimsession
+npm*
+include
+lib
+deploy
+bin
+.Python
+*.swp
+*.pyc
+node*

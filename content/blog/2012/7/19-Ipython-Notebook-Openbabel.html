@@ -1,0 +1,32 @@
+---
+title: Visualizing molecules using IPython and OpenBabel
+Description: An awesome application of using the IPython Notebook with Cheminformatics toolset OpenBabel
+created: !!timestamp 2012-7-19 23:00:00
+extends: blog.j2
+default_block: post
+listable: true
+tags:
+    - Cheminformatics
+    - OpenBabel
+    - IPython
+    - Tricks
+---
+
+All Python developers should be well aware of [IPython](https://github.com/ipython/ipython/) and its awesome [Notebook](http://ipython.org/ipython-doc/dev/interactive/htmlnotebook.html) functionality. It's like Mathematica, but runs Python underneath. Probably the most mature open-source and free Python compatible cheminformatics software is [OpenBabel](http://ipython.org/ipython-doc/dev/interactive/htmlnotebook.html), which supports SVG drawing of molecular structures from SMILES or nearly any other format.
+
+In my work this summer computationally manipulating chemical structures this summer, an indispensible method for visualizing complex molecular structures has been the following short function:
+
+{% syntax python %}
+from IPython.core.display import SVG
+import openbabel, pybel
+import subprocess
+
+def draw(can_smiles):
+    cmd = 'obabel -:"%s" -ican -osvg' % can_smiles
+    svg = subprocess.check_output(cmd, shell=True)
+    return SVG(data=svg)
+{% endsyntax %}
+
+An example is...
+
+<img src="{{ media_url('img/aspirin.png') }}" />
